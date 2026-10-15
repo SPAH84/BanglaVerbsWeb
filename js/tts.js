@@ -1,7 +1,7 @@
-// tts.js v33 — High-Quality Cross-Browser Audio Engine for Bangla Verb Drills
-// Features: Natural English Studio Voices (Female/Male) + Bengali Cloud Neural Streams + IndexedDB Caching + Cross-Browser Fallbacks
+// tts.js v34 — High-Quality Cross-Browser Audio Engine for Bangla Verb Drills
+// Features: True Female & Male Voice Selection for BOTH English & Bangla + Cloud Streams + Caching + Fallbacks
 
-import { audioCache } from "./cache.js?v=33";
+import { audioCache } from "./cache.js?v=34";
 
 class TTSEngine {
     constructor() {
@@ -50,6 +50,14 @@ class TTSEngine {
     getVoices() {
         if (!('speechSynthesis' in window)) return [];
         return window.speechSynthesis.getVoices() || [];
+    }
+
+    hasMaleBengaliVoice() {
+        const voices = this.getVoices();
+        return voices.some(v =>
+            v.lang && v.lang.toLowerCase().includes("bn") &&
+            /bashkar|pradeep|male|পুরুষ/i.test(v.name)
+        );
     }
 
     setSpeed(speed) {
@@ -139,23 +147,29 @@ class TTSEngine {
             // Fast fallback: If speech synthesis fails to start, stream Google audio
             console.warn("SpeechSynthesis did not start for English, falling back to audio stream");
             const streamUrl = this.getTTSStreamUrl(text, "en");
-            return this.playAudioUrl(streamUrl);
+            return this.playAudioUrl(streamUrl, voiceGender);
         }
 
-        // 2. Bengali: Check local IndexedDB cache first
+        // 2. Bengali Male Voice: If browser has a dedicated male Bengali neural voice (e.g. Edge Bashkar/Pradeep), use it!
+        if (voiceGender === "male" && this.hasMaleBengaliVoice()) {
+            const played = await this.speakNative(text, "bn", "male");
+            if (played) return;
+        }
+
+        // 3. Bengali: Check local IndexedDB cache first
         try {
             const cachedUrl = await audioCache.getAudio(lang, voiceGender, text);
             if (cachedUrl) {
-                const cachedOk = await this.playAudioUrl(cachedUrl);
+                const cachedOk = await this.playAudioUrl(cachedUrl, voiceGender);
                 if (cachedOk) return;
             }
         } catch (err) {
             console.warn("Cache read error:", err);
         }
 
-        // 3. Bengali: Stream directly via <audio> element
+        // 4. Bengali: Stream via <audio> element with male/female pitch formatting
         const streamUrl = this.getTTSStreamUrl(text, "bn");
-        const played = await this.playAudioUrl(streamUrl);
+        const played = await this.playAudioUrl(streamUrl, voiceGender);
 
         if (played) {
             // Background cache attempt
@@ -170,15 +184,30 @@ class TTSEngine {
             return;
         }
 
-        // 4. Fallback: Browser Web Speech API for Bengali
+        // 5. Fallback: Browser Web Speech API for Bengali
         return this.speakNative(text, "bn", voiceGender);
     }
 
-    playAudioUrl(url) {
+    playAudioUrl(url, voiceGender = "female") {
         return new Promise((resolve) => {
             this.audioPlayer.referrerPolicy = "no-referrer";
             this.audioPlayer.src = url;
-            this.audioPlayer.playbackRate = this.playSpeed;
+
+            // Voice Gender modulation for stream audio:
+            // Google Translate Bengali stream is inherently female.
+            // When Male is selected, disable pitch preservation and shift playbackRate to 0.85,
+            // lowering the vocal pitch by ~3 semitones into a natural, deeper male register!
+            if (voiceGender === "male") {
+                this.audioPlayer.preservesPitch = false;
+                if ('webkitPreservesPitch' in this.audioPlayer) this.audioPlayer.webkitPreservesPitch = false;
+                if ('mozPreservesPitch' in this.audioPlayer) this.audioPlayer.mozPreservesPitch = false;
+                this.audioPlayer.playbackRate = this.playSpeed * 0.85;
+            } else {
+                this.audioPlayer.preservesPitch = true;
+                if ('webkitPreservesPitch' in this.audioPlayer) this.audioPlayer.webkitPreservesPitch = true;
+                if ('mozPreservesPitch' in this.audioPlayer) this.audioPlayer.mozPreservesPitch = true;
+                this.audioPlayer.playbackRate = this.playSpeed;
+            }
 
             let resolved = false;
             let timeoutId = null;
@@ -242,16 +271,21 @@ class TTSEngine {
                     let bestVoice = null;
 
                     if (isEnglish) {
-                        if (voiceGender === "female") {
-                            // High quality female voices: Samantha (Mac/iOS), Jenny/Aria (Edge), Google US English, Zira, Karen
-                            bestVoice = langVoices.find(v => /samantha|karen|victoria|zira|jenny|aria|female|google us english/i.test(v.name));
-                        } else {
+                        if (voiceGender === "male") {
                             // High quality male voices: Daniel/Alex/Oliver (Mac), Guy/David (Edge), Google UK English Male, George
                             bestVoice = langVoices.find(v => /guy|daniel|david|alex|oliver|george|male|google uk english male/i.test(v.name));
+                        } else {
+                            // High quality female voices: Samantha (Mac/iOS), Jenny/Aria (Edge), Google US English, Zira, Karen
+                            bestVoice = langVoices.find(v => /samantha|karen|victoria|zira|jenny|aria|female|google us english/i.test(v.name));
                         }
                     } else {
-                        // Bengali voices (e.g. Google বাংলা in Chrome, Lekha in macOS)
-                        bestVoice = langVoices.find(v => /bangla|bengali|lekha/i.test(v.name));
+                        // Bengali voices
+                        if (voiceGender === "male") {
+                            bestVoice = langVoices.find(v => /bashkar|pradeep|male|পুরুষ/i.test(v.name));
+                        } else {
+                            bestVoice = langVoices.find(v => /nabanita|tanishaa|female|lekha|মহিলা/i.test(v.name));
+                        }
+                        if (!bestVoice) bestVoice = langVoices.find(v => /bangla|bengali|lekha/i.test(v.name));
                     }
 
                     utterance.voice = bestVoice || langVoices[0];
