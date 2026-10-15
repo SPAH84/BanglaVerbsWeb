@@ -1,8 +1,8 @@
 // app.js - Main Application Controller for BanglaVerbsWeb
 // Powered by Live Cloud Neural TTS + On-Demand IndexedDB Caching
 
-import { VERBS, VERB_SETS, getVerbForms } from "./data/verbs.js";
-import { TENSES, DEFAULT_TENSE } from "./data/tenses.js";
+import { VERBS, VERB_SETS, getVerbForms } from "./data/verbs.js?v=35";
+import { TENSES, DEFAULT_TENSE } from "./data/tenses.js?v=35";
 import { tts } from "./tts.js?v=35";
 import { audioCache } from "./cache.js?v=35";
 
