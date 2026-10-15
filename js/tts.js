@@ -1,7 +1,7 @@
-// tts.js v34 — High-Quality Cross-Browser Audio Engine for Bangla Verb Drills
-// Features: True Female & Male Voice Selection for BOTH English & Bangla + Cloud Streams + Caching + Fallbacks
+// tts.js v35 — High-Quality Cross-Browser Audio Engine for Bangla Verb Drills
+// Features: True Female & Male Voice Selection for BOTH English & Bangla + Decoupled Pitch & Speed + 4 Tenses
 
-import { audioCache } from "./cache.js?v=34";
+import { audioCache } from "./cache.js?v=35";
 
 class TTSEngine {
     constructor() {
@@ -63,6 +63,9 @@ class TTSEngine {
     setSpeed(speed) {
         this.playSpeed = speed;
         if (this.audioPlayer) {
+            this.audioPlayer.preservesPitch = true;
+            if ('webkitPreservesPitch' in this.audioPlayer) this.audioPlayer.webkitPreservesPitch = true;
+            if ('mozPreservesPitch' in this.audioPlayer) this.audioPlayer.mozPreservesPitch = true;
             this.audioPlayer.playbackRate = speed;
         }
     }
@@ -193,21 +196,11 @@ class TTSEngine {
             this.audioPlayer.referrerPolicy = "no-referrer";
             this.audioPlayer.src = url;
 
-            // Voice Gender modulation for stream audio:
-            // Google Translate Bengali stream is inherently female.
-            // When Male is selected, disable pitch preservation and shift playbackRate to 0.85,
-            // lowering the vocal pitch by ~3 semitones into a natural, deeper male register!
-            if (voiceGender === "male") {
-                this.audioPlayer.preservesPitch = false;
-                if ('webkitPreservesPitch' in this.audioPlayer) this.audioPlayer.webkitPreservesPitch = false;
-                if ('mozPreservesPitch' in this.audioPlayer) this.audioPlayer.mozPreservesPitch = false;
-                this.audioPlayer.playbackRate = this.playSpeed * 0.85;
-            } else {
-                this.audioPlayer.preservesPitch = true;
-                if ('webkitPreservesPitch' in this.audioPlayer) this.audioPlayer.webkitPreservesPitch = true;
-                if ('mozPreservesPitch' in this.audioPlayer) this.audioPlayer.mozPreservesPitch = true;
-                this.audioPlayer.playbackRate = this.playSpeed;
-            }
+            // Always preserve pitch so user speed selection (0.8x, 1.0x, 1.2x) never distorts vocal pitch
+            this.audioPlayer.preservesPitch = true;
+            if ('webkitPreservesPitch' in this.audioPlayer) this.audioPlayer.webkitPreservesPitch = true;
+            if ('mozPreservesPitch' in this.audioPlayer) this.audioPlayer.mozPreservesPitch = true;
+            this.audioPlayer.playbackRate = this.playSpeed;
 
             let resolved = false;
             let timeoutId = null;
@@ -256,8 +249,9 @@ class TTSEngine {
 
         return new Promise((resolve) => {
             const utterance = new SpeechSynthesisUtterance(text);
-            this.currentUtterance = utterance; // Prevent garbage collection dropping speech
+            this.currentUtterance = utterance;
             utterance.rate = this.playSpeed;
+            utterance.pitch = (voiceGender === "male" ? 0.8 : 1.05);
 
             const isEnglish = lang === "en" || lang.startsWith("en");
             utterance.lang = isEnglish ? "en-US" : "bn-BD";

@@ -3,8 +3,8 @@
 
 import { VERBS, VERB_SETS, getVerbForms } from "./data/verbs.js";
 import { TENSES, DEFAULT_TENSE } from "./data/tenses.js";
-import { tts } from "./tts.js?v=34";
-import { audioCache } from "./cache.js?v=34";
+import { tts } from "./tts.js?v=35";
+import { audioCache } from "./cache.js?v=35";
 
 // --- STATE MANAGEMENT ---
 let selectedTense = DEFAULT_TENSE;

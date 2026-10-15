@@ -3,14 +3,14 @@
 export const TENSES = {
     present_simple: {
         id: "present_simple",
-        label: "Simple",
+        label: "Pr. Simple",
         fullLabel: "Present Simple",
         group: "Present",
         order: 1
     },
     present_perfect: {
         id: "present_perfect",
-        label: "Perfect",
+        label: "Pr. Perfect",
         fullLabel: "Present Perfect",
         group: "Present",
         order: 2
@@ -22,10 +22,10 @@ export const TENSES = {
         group: "Past",
         order: 3
     },
-    past_continuous: {
-        id: "past_continuous",
-        label: "Past Cont.",
-        fullLabel: "Past Continuous",
+    past_perfect: {
+        id: "past_perfect",
+        label: "Past Perfect",
+        fullLabel: "Past Perfect",
         group: "Past",
         order: 4
     },
