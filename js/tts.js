@@ -1,7 +1,7 @@
-// tts.js v35 — High-Quality Cross-Browser Audio Engine for Bangla Verb Drills
+// tts.js v36 — High-Quality Cross-Browser Audio Engine for Bangla Verb Drills
 // Features: True Female & Male Voice Selection for BOTH English & Bangla + Decoupled Pitch & Speed + 4 Tenses
 
-import { audioCache } from "./cache.js?v=35";
+import { audioCache } from "./cache.js?v=36";
 
 class TTSEngine {
     constructor() {
@@ -52,22 +52,13 @@ class TTSEngine {
         return window.speechSynthesis.getVoices() || [];
     }
 
-    hasMaleBengaliVoice() {
+    hasBengaliVoice() {
         const voices = this.getVoices();
-        return voices.some(v =>
-            v.lang && v.lang.toLowerCase().includes("bn") &&
-            /bashkar|pradeep|male|পুরুষ/i.test(v.name)
-        );
+        return voices.some(v => v.lang && v.lang.toLowerCase().includes("bn"));
     }
 
     setSpeed(speed) {
         this.playSpeed = speed;
-        if (this.audioPlayer) {
-            this.audioPlayer.preservesPitch = true;
-            if ('webkitPreservesPitch' in this.audioPlayer) this.audioPlayer.webkitPreservesPitch = true;
-            if ('mozPreservesPitch' in this.audioPlayer) this.audioPlayer.mozPreservesPitch = true;
-            this.audioPlayer.playbackRate = speed;
-        }
     }
 
     unlockAudioSession() {
@@ -153,13 +144,13 @@ class TTSEngine {
             return this.playAudioUrl(streamUrl, voiceGender);
         }
 
-        // 2. Bengali Male Voice: If browser has a dedicated male Bengali neural voice (e.g. Edge Bashkar/Pradeep), use it!
-        if (voiceGender === "male" && this.hasMaleBengaliVoice()) {
+        // 2. Bengali Male Voice: Use SpeechSynthesis (Edge Bashkar or pitch-shifted Google বাংলা / Lekha)
+        if (voiceGender === "male") {
             const played = await this.speakNative(text, "bn", "male");
             if (played) return;
         }
 
-        // 3. Bengali: Check local IndexedDB cache first
+        // 3. Bengali: Check local IndexedDB cache
         try {
             const cachedUrl = await audioCache.getAudio(lang, voiceGender, text);
             if (cachedUrl) {
@@ -170,7 +161,7 @@ class TTSEngine {
             console.warn("Cache read error:", err);
         }
 
-        // 4. Bengali: Stream via <audio> element with male/female pitch formatting
+        // 4. Bengali: Stream via <audio> element
         const streamUrl = this.getTTSStreamUrl(text, "bn");
         const played = await this.playAudioUrl(streamUrl, voiceGender);
 
@@ -196,11 +187,19 @@ class TTSEngine {
             this.audioPlayer.referrerPolicy = "no-referrer";
             this.audioPlayer.src = url;
 
-            // Always preserve pitch so user speed selection (0.8x, 1.0x, 1.2x) never distorts vocal pitch
-            this.audioPlayer.preservesPitch = true;
-            if ('webkitPreservesPitch' in this.audioPlayer) this.audioPlayer.webkitPreservesPitch = true;
-            if ('mozPreservesPitch' in this.audioPlayer) this.audioPlayer.mozPreservesPitch = true;
-            this.audioPlayer.playbackRate = this.playSpeed;
+            // For male voice fallback on the Google stream:
+            // Shift pitch down into natural male register without breaking user-chosen speed
+            if (voiceGender === "male") {
+                this.audioPlayer.preservesPitch = false;
+                if ('webkitPreservesPitch' in this.audioPlayer) this.audioPlayer.webkitPreservesPitch = false;
+                if ('mozPreservesPitch' in this.audioPlayer) this.audioPlayer.mozPreservesPitch = false;
+                this.audioPlayer.playbackRate = this.playSpeed * 0.86;
+            } else {
+                this.audioPlayer.preservesPitch = true;
+                if ('webkitPreservesPitch' in this.audioPlayer) this.audioPlayer.webkitPreservesPitch = true;
+                if ('mozPreservesPitch' in this.audioPlayer) this.audioPlayer.mozPreservesPitch = true;
+                this.audioPlayer.playbackRate = this.playSpeed;
+            }
 
             let resolved = false;
             let timeoutId = null;
@@ -247,44 +246,43 @@ class TTSEngine {
             voices = await this.voicesReady;
         }
 
+        const isEnglish = lang === "en" || lang.startsWith("en");
+        const targetCode = isEnglish ? "en" : "bn";
+        const langVoices = (voices || []).filter(v => v.lang && v.lang.toLowerCase().includes(targetCode));
+
+        // If no voices available for this language, return false so stream fallback takes over immediately
+        if (langVoices.length === 0) {
+            return false;
+        }
+
         return new Promise((resolve) => {
             const utterance = new SpeechSynthesisUtterance(text);
             this.currentUtterance = utterance;
             utterance.rate = this.playSpeed;
-            utterance.pitch = (voiceGender === "male" ? 0.8 : 1.05);
-
-            const isEnglish = lang === "en" || lang.startsWith("en");
             utterance.lang = isEnglish ? "en-US" : "bn-BD";
 
-            // Find best matching high-quality voice
-            if (voices && voices.length > 0) {
-                const targetCode = isEnglish ? "en" : "bn";
-                const langVoices = voices.filter(v => v.lang && v.lang.toLowerCase().includes(targetCode));
-
-                if (langVoices.length > 0) {
-                    let bestVoice = null;
-
-                    if (isEnglish) {
-                        if (voiceGender === "male") {
-                            // High quality male voices: Daniel/Alex/Oliver (Mac), Guy/David (Edge), Google UK English Male, George
-                            bestVoice = langVoices.find(v => /guy|daniel|david|alex|oliver|george|male|google uk english male/i.test(v.name));
-                        } else {
-                            // High quality female voices: Samantha (Mac/iOS), Jenny/Aria (Edge), Google US English, Zira, Karen
-                            bestVoice = langVoices.find(v => /samantha|karen|victoria|zira|jenny|aria|female|google us english/i.test(v.name));
-                        }
-                    } else {
-                        // Bengali voices
-                        if (voiceGender === "male") {
-                            bestVoice = langVoices.find(v => /bashkar|pradeep|male|পুরুষ/i.test(v.name));
-                        } else {
-                            bestVoice = langVoices.find(v => /nabanita|tanishaa|female|lekha|মহিলা/i.test(v.name));
-                        }
-                        if (!bestVoice) bestVoice = langVoices.find(v => /bangla|bengali|lekha/i.test(v.name));
-                    }
-
-                    utterance.voice = bestVoice || langVoices[0];
+            let bestVoice = null;
+            if (isEnglish) {
+                if (voiceGender === "male") {
+                    bestVoice = langVoices.find(v => /guy|daniel|david|alex|oliver|george|male|google uk english male/i.test(v.name));
+                    utterance.pitch = 0.85;
+                } else {
+                    bestVoice = langVoices.find(v => /samantha|karen|victoria|zira|jenny|aria|female|google us english/i.test(v.name));
+                    utterance.pitch = 1.05;
+                }
+            } else {
+                // Bengali voices
+                if (voiceGender === "male") {
+                    bestVoice = langVoices.find(v => /bashkar|pradeep|male|পুরুষ/i.test(v.name));
+                    // If native male neural voice found (e.g. Edge Bashkar), pitch is 0.95; otherwise lower pitch to masculine register (0.72)
+                    utterance.pitch = bestVoice ? 0.95 : 0.72;
+                } else {
+                    bestVoice = langVoices.find(v => /nabanita|tanishaa|female|lekha|মহিলা/i.test(v.name));
+                    utterance.pitch = 1.0;
                 }
             }
+
+            utterance.voice = bestVoice || langVoices[0];
 
             let started = false;
             let finished = false;

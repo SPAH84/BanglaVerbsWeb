@@ -1,12 +1,12 @@
 // verbs.js - Modular Verb Dataset for Bangla Verb Drills
-// Supports modular Learning Sets: Set 1 (Foundation), Set 2 (Extended), Set 3 (Advanced), Set 4 (Mastery)
-// Tenses: Present Simple, Present Perfect, Past Simple, Past Perfect
+// Supports modular Learning Sets: Set 1 (Foundation - 20 verbs), Set 2 (Extended - 40 verbs)
+// Total 60 verbs across 4 tenses: Present Simple, Present Perfect, Past Simple, Past Perfect
 
 export const VERB_SETS = {
     "1": {
         "id": 1,
         "name": "Foundation",
-        "count": 19,
+        "count": 20,
         "description": "Essential daily verbs"
     },
     "2": {
@@ -202,7 +202,16 @@ export const VERBS = [
         }
     },
     {
-        id: "v020", set: 2, eng: "To open", inf: "খোলা",
+        id: "v020", set: 1, eng: "To make", inf: "বানানো",
+        tenses: {
+            present_simple: {"ami":"বানাই","tumi":"বানাও","apni":"বানান","se":"বানায়"},
+            present_perfect: {"ami":"বানিয়েছি","tumi":"বানিয়েছো","apni":"বানিয়েছেন","se":"বানিয়েছে"},
+            past_simple: {"ami":"বানালাম","tumi":"বানালে","apni":"বানালেন","se":"বানালো"},
+            past_perfect: {"ami":"বানিয়েছিলাম","tumi":"বানিয়েছিলে","apni":"বানিয়েছিলেন","se":"বানিয়েছিল"}
+        }
+    },
+    {
+        id: "v021", set: 2, eng: "To open", inf: "খোলা",
         tenses: {
             present_simple: {"ami":"খুলি","tumi":"খোলো","apni":"খোলেন","se":"খোলে"},
             present_perfect: {"ami":"খুলেছি","tumi":"খুলেছো","apni":"খুলেছেন","se":"খুলেছে"},
@@ -211,7 +220,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v021", set: 2, eng: "To close", inf: "বন্ধ করা",
+        id: "v022", set: 2, eng: "To close", inf: "বন্ধ করা",
         tenses: {
             present_simple: {"ami":"বন্ধ করি","tumi":"বন্ধ করো","apni":"বন্ধ করেন","se":"বন্ধ করে"},
             present_perfect: {"ami":"বন্ধ করেছি","tumi":"বন্ধ করেছো","apni":"বন্ধ করেছেন","se":"বন্ধ করেছে"},
@@ -220,7 +229,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v022", set: 2, eng: "To buy", inf: "কেনা",
+        id: "v023", set: 2, eng: "To buy", inf: "কেনা",
         tenses: {
             present_simple: {"ami":"কিনি","tumi":"কেনো","apni":"কেনেন","se":"কেনে"},
             present_perfect: {"ami":"কিনেছি","tumi":"কিনেছো","apni":"কিনেছেন","se":"কিনেছে"},
@@ -229,7 +238,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v023", set: 2, eng: "To sell", inf: "বেচা",
+        id: "v024", set: 2, eng: "To sell", inf: "বেচা",
         tenses: {
             present_simple: {"ami":"বেচি","tumi":"বেচো","apni":"বেচেন","se":"বেচে"},
             present_perfect: {"ami":"বেচেছি","tumi":"বেচেছো","apni":"বেচেছেন","se":"বেচেছে"},
@@ -238,7 +247,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v024", set: 2, eng: "To bring", inf: "আনা",
+        id: "v025", set: 2, eng: "To bring", inf: "আনা",
         tenses: {
             present_simple: {"ami":"আনি","tumi":"আনো","apni":"আনেন","se":"আনে"},
             present_perfect: {"ami":"এনেছি","tumi":"এনেছো","apni":"এনেছেন","se":"এনেছে"},
@@ -247,7 +256,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v025", set: 2, eng: "To send", inf: "পাঠানো",
+        id: "v026", set: 2, eng: "To send", inf: "পাঠানো",
         tenses: {
             present_simple: {"ami":"পাঠাই","tumi":"পাঠাও","apni":"পাঠান","se":"পাঠায়"},
             present_perfect: {"ami":"পাঠিয়েছি","tumi":"পাঠিয়েছো","apni":"পাঠিয়েছেন","se":"পাঠিয়েছে"},
@@ -256,7 +265,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v026", set: 2, eng: "To call", inf: "ডাকা",
+        id: "v027", set: 2, eng: "To call", inf: "ডাকা",
         tenses: {
             present_simple: {"ami":"ডাকি","tumi":"ডাকো","apni":"ডাকেন","se":"ডাকে"},
             present_perfect: {"ami":"ডেকেছি","tumi":"ডেকেছো","apni":"ডেকেছেন","se":"ডেকেছে"},
@@ -265,7 +274,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v027", set: 2, eng: "To ask", inf: "জিজ্ঞাসা করা",
+        id: "v028", set: 2, eng: "To ask", inf: "জিজ্ঞাসা করা",
         tenses: {
             present_simple: {"ami":"জিজ্ঞাসা করি","tumi":"জিজ্ঞাসা করো","apni":"জিজ্ঞাসা করেন","se":"জিজ্ঞাসা করে"},
             present_perfect: {"ami":"জিজ্ঞাসা করেছি","tumi":"জিজ্ঞাসা করেছো","apni":"জিজ্ঞাসা করেছেন","se":"জিজ্ঞাসা করেছে"},
@@ -274,7 +283,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v028", set: 2, eng: "To answer", inf: "উত্তর দেওয়া",
+        id: "v029", set: 2, eng: "To answer", inf: "উত্তর দেওয়া",
         tenses: {
             present_simple: {"ami":"উত্তর দিই","tumi":"উত্তর দাও","apni":"উত্তর দেন","se":"উত্তর দেয়"},
             present_perfect: {"ami":"উত্তর দিয়েছি","tumi":"উত্তর দিয়েছো","apni":"উত্তর দিয়েছেন","se":"উত্তর দিয়েছে"},
@@ -283,7 +292,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v029", set: 2, eng: "To work", inf: "কাজ করা",
+        id: "v030", set: 2, eng: "To work", inf: "কাজ করা",
         tenses: {
             present_simple: {"ami":"কাজ করি","tumi":"কাজ করো","apni":"কাজ করেন","se":"কাজ করে"},
             present_perfect: {"ami":"কাজ করেছি","tumi":"কাজ করেছো","apni":"কাজ করেছেন","se":"কাজ করেছে"},
@@ -292,7 +301,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v030", set: 2, eng: "To play", inf: "খেলা",
+        id: "v031", set: 2, eng: "To play", inf: "খেলা",
         tenses: {
             present_simple: {"ami":"খেলি","tumi":"খেলো","apni":"খেলেন","se":"খেলে"},
             present_perfect: {"ami":"খেলেছি","tumi":"খেলেছো","apni":"খেলেছেন","se":"খেলেছে"},
@@ -301,7 +310,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v031", set: 2, eng: "To run", inf: "দৌড়ানো",
+        id: "v032", set: 2, eng: "To run", inf: "দৌড়ানো",
         tenses: {
             present_simple: {"ami":"দৌড়াই","tumi":"দৌড়াও","apni":"দৌড়ান","se":"দৌড়ায়"},
             present_perfect: {"ami":"দৌড়েছি","tumi":"দৌড়েছো","apni":"দৌড়েছেন","se":"দৌড়েছে"},
@@ -310,7 +319,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v032", set: 2, eng: "To walk", inf: "হাঁটা",
+        id: "v033", set: 2, eng: "To walk", inf: "হাঁটা",
         tenses: {
             present_simple: {"ami":"হাঁটি","tumi":"হাঁটো","apni":"হাঁটেন","se":"হাঁটে"},
             present_perfect: {"ami":"হেঁটেছি","tumi":"হেঁটেছো","apni":"হেঁটেছেন","se":"হেঁটেছে"},
@@ -319,7 +328,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v033", set: 2, eng: "To swim", inf: "সাঁতার কাটা",
+        id: "v034", set: 2, eng: "To swim", inf: "সাঁতার কাটা",
         tenses: {
             present_simple: {"ami":"সাঁতার কাটি","tumi":"সাঁতার কাটো","apni":"সাঁতার কাটেন","se":"সাঁতার কাটে"},
             present_perfect: {"ami":"সাঁতার কেটেছি","tumi":"সাঁতার কেটেছো","apni":"সাঁতার কেটেছেন","se":"সাঁতার কেটেছে"},
@@ -328,7 +337,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v034", set: 2, eng: "To smile", inf: "হাসা",
+        id: "v035", set: 2, eng: "To smile", inf: "হাসা",
         tenses: {
             present_simple: {"ami":"হাসি","tumi":"হাসো","apni":"হাসেন","se":"হাসে"},
             present_perfect: {"ami":"হেসেছি","tumi":"হেসেছো","apni":"হেসেছেন","se":"হেসেছে"},
@@ -337,7 +346,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v035", set: 2, eng: "To cry", inf: "কাঁদা",
+        id: "v036", set: 2, eng: "To cry", inf: "কাঁদা",
         tenses: {
             present_simple: {"ami":"কাঁদি","tumi":"কাঁদো","apni":"কাঁদেন","se":"কাঁদে"},
             present_perfect: {"ami":"কেঁদেছি","tumi":"কেঁদেছো","apni":"কেঁদেছেন","se":"কেঁদেছে"},
@@ -346,7 +355,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v036", set: 2, eng: "To think", inf: "ভাবা",
+        id: "v037", set: 2, eng: "To think", inf: "ভাবা",
         tenses: {
             present_simple: {"ami":"ভাবি","tumi":"ভাবো","apni":"ভাবেন","se":"ভাবে"},
             present_perfect: {"ami":"ভেবেছি","tumi":"ভেবেছো","apni":"ভেবেছেন","se":"ভেবেছে"},
@@ -355,7 +364,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v037", set: 2, eng: "To remember", inf: "মনে রাখা",
+        id: "v038", set: 2, eng: "To remember", inf: "মনে রাখা",
         tenses: {
             present_simple: {"ami":"মনে রাখি","tumi":"মনে রাখো","apni":"মনে রাখেন","se":"মনে রাখে"},
             present_perfect: {"ami":"মনে রেখেছি","tumi":"মনে রেখেছো","apni":"মনে রেখেছেন","se":"মনে রেখেছে"},
@@ -364,7 +373,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v038", set: 2, eng: "To forget", inf: "ভুলে যাওয়া",
+        id: "v039", set: 2, eng: "To forget", inf: "ভুলে যাওয়া",
         tenses: {
             present_simple: {"ami":"ভুলে যাই","tumi":"ভুলে যাও","apni":"ভুলে যান","se":"ভুলে যায়"},
             present_perfect: {"ami":"ভুলে গিয়েছি","tumi":"ভুলে গিয়েছো","apni":"ভুলে গিয়েছেন","se":"ভুলে গিয়েছে"},
@@ -373,7 +382,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v039", set: 2, eng: "To wait", inf: "অপেক্ষা করা",
+        id: "v040", set: 2, eng: "To wait", inf: "অপেক্ষা করা",
         tenses: {
             present_simple: {"ami":"অপেক্ষা করি","tumi":"অপেক্ষা করো","apni":"অপেক্ষা করেন","se":"অপেক্ষা করে"},
             present_perfect: {"ami":"অপেক্ষা করেছি","tumi":"অপেক্ষা করেছো","apni":"অপেক্ষা করেছেন","se":"অপেক্ষা করেছে"},
@@ -382,7 +391,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v040", set: 2, eng: "To help", inf: "সাহায্য করা",
+        id: "v041", set: 2, eng: "To help", inf: "সাহায্য করা",
         tenses: {
             present_simple: {"ami":"সাহায্য করি","tumi":"সাহায্য করো","apni":"সাহায্য করেন","se":"সাহায্য করে"},
             present_perfect: {"ami":"সাহায্য করেছি","tumi":"সাহায্য করেছো","apni":"সাহায্য করেছেন","se":"সাহায্য করেছে"},
@@ -391,7 +400,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v041", set: 2, eng: "To teach", inf: "শেখানো",
+        id: "v042", set: 2, eng: "To teach", inf: "শেখানো",
         tenses: {
             present_simple: {"ami":"শেখাই","tumi":"শেখাও","apni":"শেখান","se":"শেখায়"},
             present_perfect: {"ami":"শিখিয়েছি","tumi":"শিখিয়েছো","apni":"শিখিয়েছেন","se":"শিখিয়েছে"},
@@ -400,7 +409,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v042", set: 2, eng: "To begin", inf: "শুরু করা",
+        id: "v043", set: 2, eng: "To begin", inf: "শুরু করা",
         tenses: {
             present_simple: {"ami":"শুরু করি","tumi":"শুরু করো","apni":"শুরু করেন","se":"শুরু করে"},
             present_perfect: {"ami":"শুরু করেছি","tumi":"শুরু করেছো","apni":"শুরু করেছেন","se":"শুরু করেছে"},
@@ -409,7 +418,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v043", set: 2, eng: "To finish", inf: "শেষ করা",
+        id: "v044", set: 2, eng: "To finish", inf: "শেষ করা",
         tenses: {
             present_simple: {"ami":"শেষ করি","tumi":"শেষ করো","apni":"শেষ করেন","se":"শেষ করে"},
             present_perfect: {"ami":"শেষ করেছি","tumi":"শেষ করেছো","apni":"শেষ করেছেন","se":"শেষ করেছে"},
@@ -418,7 +427,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v044", set: 2, eng: "To cook", inf: "রান্না করা",
+        id: "v045", set: 2, eng: "To cook", inf: "রান্না করা",
         tenses: {
             present_simple: {"ami":"রান্না করি","tumi":"রান্না করো","apni":"রান্না করেন","se":"রান্না করে"},
             present_perfect: {"ami":"রান্না করেছি","tumi":"রান্না করেছো","apni":"রান্না করেছেন","se":"রান্না করেছে"},
@@ -427,7 +436,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v045", set: 2, eng: "To clean", inf: "পরিষ্কার করা",
+        id: "v046", set: 2, eng: "To clean", inf: "পরিষ্কার করা",
         tenses: {
             present_simple: {"ami":"পরিষ্কার করি","tumi":"পরিষ্কার করো","apni":"পরিষ্কার করেন","se":"পরিষ্কার করে"},
             present_perfect: {"ami":"পরিষ্কার করেছি","tumi":"পরিষ্কার করেছো","apni":"পরিষ্কার করেছেন","se":"পরিষ্কার করেছে"},
@@ -436,7 +445,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v046", set: 2, eng: "To wash", inf: "ধোয়া",
+        id: "v047", set: 2, eng: "To wash", inf: "ধোয়া",
         tenses: {
             present_simple: {"ami":"ধুই","tumi":"ধোও","apni":"ধোন","se":"ধোয়"},
             present_perfect: {"ami":"ধুয়েছি","tumi":"ধুয়েছো","apni":"ধুয়েছেন","se":"ধুয়েছে"},
@@ -445,7 +454,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v047", set: 2, eng: "To wear", inf: "পরা",
+        id: "v048", set: 2, eng: "To wear", inf: "পরা",
         tenses: {
             present_simple: {"ami":"পরি","tumi":"পরো","apni":"পরেন","se":"পরে"},
             present_perfect: {"ami":"পরেছি","tumi":"পরেছো","apni":"পরেছেন","se":"পরেছে"},
@@ -454,7 +463,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v048", set: 2, eng: "To live", inf: "বাস করা",
+        id: "v049", set: 2, eng: "To live", inf: "বাস করা",
         tenses: {
             present_simple: {"ami":"বাস করি","tumi":"বাস করো","apni":"বাস করেন","se":"বাস করে"},
             present_perfect: {"ami":"বাস করেছি","tumi":"বাস করেছো","apni":"বাস করেছেন","se":"বাস করেছে"},
@@ -463,7 +472,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v049", set: 2, eng: "To arrive", inf: "পৌঁছানো",
+        id: "v050", set: 2, eng: "To arrive", inf: "পৌঁছানো",
         tenses: {
             present_simple: {"ami":"পৌঁছাই","tumi":"পৌঁছাও","apni":"পৌঁছান","se":"পৌঁছায়"},
             present_perfect: {"ami":"পৌঁছেছি","tumi":"পৌঁছেছো","apni":"পৌঁছেছেন","se":"পৌঁছেছে"},
@@ -472,7 +481,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v050", set: 2, eng: "To leave", inf: "ছাড়া",
+        id: "v051", set: 2, eng: "To leave", inf: "ছাড়া",
         tenses: {
             present_simple: {"ami":"ছাড়ি","tumi":"ছাড়ো","apni":"ছাড়েন","se":"ছাড়ে"},
             present_perfect: {"ami":"ছেড়েছি","tumi":"ছেড়েছো","apni":"ছেড়েছেন","se":"ছেড়েছে"},
@@ -481,7 +490,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v051", set: 2, eng: "To meet", inf: "দেখা করা",
+        id: "v052", set: 2, eng: "To meet", inf: "দেখা করা",
         tenses: {
             present_simple: {"ami":"দেখা করি","tumi":"দেখা করো","apni":"দেখা করেন","se":"দেখা করে"},
             present_perfect: {"ami":"দেখা করেছি","tumi":"দেখা করেছো","apni":"দেখা করেছেন","se":"দেখা করেছে"},
@@ -490,7 +499,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v052", set: 2, eng: "To travel", inf: "ভ্রমণ করা",
+        id: "v053", set: 2, eng: "To travel", inf: "ভ্রমণ করা",
         tenses: {
             present_simple: {"ami":"ভ্রমণ করি","tumi":"ভ্রমণ করো","apni":"ভ্রমণ করেন","se":"ভ্রমণ করে"},
             present_perfect: {"ami":"ভ্রমণ করেছি","tumi":"ভ্রমণ করেছো","apni":"ভ্রমণ করেছেন","se":"ভ্রমণ করেছে"},
@@ -499,7 +508,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v053", set: 2, eng: "To pay", inf: "পরিশোধ করা",
+        id: "v054", set: 2, eng: "To pay", inf: "পরিশোধ করা",
         tenses: {
             present_simple: {"ami":"পরিশোধ করি","tumi":"পরিশোধ করো","apni":"পরিশোধ করেন","se":"পরিশোধ করে"},
             present_perfect: {"ami":"পরিশোধ করেছি","tumi":"পরিশোধ করেছো","apni":"পরিশোধ করেছেন","se":"পরিশোধ করেছে"},
@@ -508,7 +517,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v054", set: 2, eng: "To win", inf: "জেতা",
+        id: "v055", set: 2, eng: "To win", inf: "জেতা",
         tenses: {
             present_simple: {"ami":"জিতি","tumi":"জেতো","apni":"জেতেন","se":"জেতে"},
             present_perfect: {"ami":"জিতেছি","tumi":"জিতেছো","apni":"জিতেছেন","se":"জিতেছে"},
@@ -517,7 +526,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v055", set: 2, eng: "To lose", inf: "হারানো",
+        id: "v056", set: 2, eng: "To lose", inf: "হারানো",
         tenses: {
             present_simple: {"ami":"হারাই","tumi":"হারাও","apni":"হারান","se":"হারায়"},
             present_perfect: {"ami":"হারিয়েছি","tumi":"হারিয়েছো","apni":"হারিয়েছেন","se":"হারিয়েছে"},
@@ -526,7 +535,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v056", set: 2, eng: "To show", inf: "দেখানো",
+        id: "v057", set: 2, eng: "To show", inf: "দেখানো",
         tenses: {
             present_simple: {"ami":"দেখাই","tumi":"দেখাও","apni":"দেখান","se":"দেখায়"},
             present_perfect: {"ami":"দেখিয়েছি","tumi":"দেখিয়েছো","apni":"দেখিয়েছেন","se":"দেখিয়েছে"},
@@ -535,7 +544,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v057", set: 2, eng: "To touch", inf: "ছোঁয়া",
+        id: "v058", set: 2, eng: "To touch", inf: "ছোঁয়া",
         tenses: {
             present_simple: {"ami":"ছুঁই","tumi":"ছোঁও","apni":"ছোঁন","se":"ছোঁয়"},
             present_perfect: {"ami":"ছুঁয়েছি","tumi":"ছুঁয়েছো","apni":"ছুঁয়েছেন","se":"ছুঁয়েছে"},
@@ -544,7 +553,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v058", set: 2, eng: "To carry", inf: "বহন করা",
+        id: "v059", set: 2, eng: "To carry", inf: "বহন করা",
         tenses: {
             present_simple: {"ami":"বহন করি","tumi":"বহন করো","apni":"বহন করেন","se":"বহন করে"},
             present_perfect: {"ami":"বহন করেছি","tumi":"বহন করেছো","apni":"বহন করেছেন","se":"বহন করেছে"},
@@ -553,7 +562,7 @@ export const VERBS = [
         }
     },
     {
-        id: "v059", set: 2, eng: "To use", inf: "ব্যবহার করা",
+        id: "v060", set: 2, eng: "To use", inf: "ব্যবহার করা",
         tenses: {
             present_simple: {"ami":"ব্যবহার করি","tumi":"ব্যবহার করো","apni":"ব্যবহার করেন","se":"ব্যবহার করে"},
             present_perfect: {"ami":"ব্যবহার করেছি","tumi":"ব্যবহার করেছো","apni":"ব্যবহার করেছেন","se":"ব্যবহার করেছে"},
