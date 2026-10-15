@@ -18,7 +18,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Noto+Serif+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
     
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="css/style.css?v=37">
+    <link rel="stylesheet" href="css/style.css?v=38">
 </head>
 <body class="dark-mode">
     <!-- App Container -->
@@ -27,23 +27,31 @@
         <header class="app-header">
             <div class="header-top">
                 <h1>Bangla Verbs</h1>
-                <span id="app-version" style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.5px;opacity:0.7;align-self:center;">v37</span>
-                <button id="theme-toggle" class="header-action-btn" aria-label="Toggle Theme">
-                    <svg class="sun-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="12" cy="12" r="5"></circle>
-                        <line x1="12" y1="1" x2="12" y2="3"></line>
-                        <line x1="12" y1="21" x2="12" y2="23"></line>
-                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                        <line x1="1" y1="12" x2="3" y2="12"></line>
-                        <line x1="21" y1="12" x2="23" y2="12"></line>
-                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                    </svg>
-                    <svg class="moon-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
-                    </svg>
-                </button>
+                <span id="app-version" style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.5px;opacity:0.7;align-self:center;">v38</span>
+                <div class="header-actions">
+                    <button id="help-toggle" class="header-action-btn" aria-label="Quick Start Guide">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01"></path>
+                        </svg>
+                    </button>
+                    <button id="theme-toggle" class="header-action-btn" aria-label="Toggle Theme">
+                        <svg class="sun-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                        <svg class="moon-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                        </svg>
+                    </button>
+                </div>
             </div>
             
             <!-- Tense Selector Bar -->
@@ -248,7 +256,65 @@
         </nav>
     </div>
 
+    <!-- Quick Start Guide Modal -->
+    <div id="help-modal" class="help-modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="help-title">
+        <div class="help-modal-card">
+            <div class="help-modal-header">
+                <div class="help-header-title">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:22px;height:22px;color:var(--accent);">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01"></path>
+                    </svg>
+                    <h2 id="help-title">Quick Start Guide</h2>
+                </div>
+                <button id="help-close-btn" class="help-close-btn" aria-label="Close Guide">&times;</button>
+            </div>
+            <div class="help-modal-body">
+                <section class="help-section">
+                    <h3>💡 How It Works</h3>
+                    <p>BanglaVerbs builds speech reflexes through active listening & recall across the 4 foundational Bangla pronouns:</p>
+                    <div class="help-pronoun-grid">
+                        <div class="help-pronoun-chip"><strong>আমি</strong> (Ami) <span>I</span></div>
+                        <div class="help-pronoun-chip"><strong>তুমি</strong> (Tumi) <span>You (familiar)</span></div>
+                        <div class="help-pronoun-chip"><strong>আপনি</strong> (Apni) <span>You (polite)</span></div>
+                        <div class="help-pronoun-chip"><strong>সে</strong> (Se) <span>He / She (ordinary)</span></div>
+                    </div>
+                </section>
+
+                <section class="help-section">
+                    <h3>🎧 Drill Mode Cycle</h3>
+                    <ol class="help-step-list">
+                        <li><strong>English Prompt:</strong> Speaks the English verb (e.g. <em>"To do"</em>).</li>
+                        <li><strong>Recall Pause:</strong> Silent gap for you to say the Bangla verb aloud.</li>
+                        <li><strong>Bangla Infinitive:</strong> Speaks the base verb (<code>করা</code>).</li>
+                        <li><strong>Conjugations:</strong> Automatically speaks each person in order (<code>আমি করি</code>, <code>তুমি করো</code>, etc.) with live screen highlights.</li>
+                        <li><strong>Advance:</strong> Moves hands-free to the next verb in your chosen set.</li>
+                    </ol>
+                </section>
+
+                <section class="help-section">
+                    <h3>⚙️ Controls & Settings</h3>
+                    <ul class="help-bullet-list">
+                        <li><strong>Tense:</strong> Switch between <em>Pr. Simple</em>, <em>Pr. Perfect</em>, <em>Past Simple</em>, and <em>Past Perfect</em>.</li>
+                        <li><strong>Level:</strong> Choose <strong>Set 1</strong> (20 basic), <strong>Set 2</strong> (40 extended), or <strong>All</strong> (60 verbs).</li>
+                        <li><strong>Voice:</strong> Toggle between Natural <strong>Female</strong> and <strong>Male</strong> voices in Playback Settings.</li>
+                        <li><strong>Speed:</strong> Adjust to <strong>0.8x</strong>, <strong>1.0x</strong>, or <strong>1.2x</strong> without pitch distortion.</li>
+                    </ul>
+                </section>
+
+                <section class="help-section">
+                    <h3>📱 Practice Screens</h3>
+                    <ul class="help-bullet-list">
+                        <li><strong>Drill:</strong> Hands-free audio repetition player.</li>
+                        <li><strong>Grid:</strong> Interactive verb table. Tap any card or conjugation to hear instant pronunciation!</li>
+                        <li><strong>Quiz:</strong> 10-question multiple-choice challenges to test your recall.</li>
+                    </ul>
+                </section>
+            </div>
+        </div>
+    </div>
+
     <!-- Custom JavaScript Module -->
-    <script type="module" src="js/app.js?v=37"></script>
+    <script type="module" src="js/app.js?v=38"></script>
 </body>
 </html>

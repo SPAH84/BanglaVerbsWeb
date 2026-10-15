@@ -120,6 +120,12 @@ body {
     -webkit-text-fill-color: transparent;
 }
 
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .header-action-btn {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
@@ -1087,4 +1093,194 @@ body.light-mode .app-nav-bar {
 .app-main-content::-webkit-scrollbar-thumb, .verbs-list-container::-webkit-scrollbar-thumb {
     background-color: var(--border-color);
     border-radius: 2px;
+}
+
+/* ==========================================================================
+   Quick Start Guide Modal
+   ========================================================================== */
+.help-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.65);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 16px;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.help-modal-overlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.help-modal-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 520px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+    animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalSlideUp {
+    from {
+        transform: translateY(24px) scale(0.96);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+.help-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 20px 14px 20px;
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.help-header-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.help-modal-header h2 {
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.help-close-btn {
+    background: transparent;
+    border: none;
+    font-size: 26px;
+    line-height: 1;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 8px;
+    transition: color 0.2s ease, background 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.help-close-btn:hover {
+    color: var(--text-primary);
+    background: var(--border-color);
+}
+
+.help-modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--text-primary);
+}
+
+.help-modal-body::-webkit-scrollbar {
+    width: 4px;
+}
+
+.help-modal-body::-webkit-scrollbar-thumb {
+    background-color: var(--border-color);
+    border-radius: 2px;
+}
+
+.help-section h3 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.help-section p {
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    font-size: 13.5px;
+}
+
+.help-pronoun-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.help-pronoun-chip {
+    background: rgba(0, 0, 0, 0.04);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+body.dark-mode .help-pronoun-chip {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.help-pronoun-chip strong {
+    font-family: var(--font-bengali);
+    font-size: 16px;
+    color: var(--accent);
+}
+
+.help-pronoun-chip span {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.help-step-list, .help-bullet-list {
+    padding-left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13.5px;
+    color: var(--text-secondary);
+}
+
+.help-step-list li strong, .help-bullet-list li strong {
+    color: var(--text-primary);
+}
+
+.help-step-list code, .help-bullet-list code {
+    background: rgba(0, 0, 0, 0.06);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-family: var(--font-bengali);
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+body.dark-mode .help-step-list code, body.dark-mode .help-bullet-list code {
+    background: rgba(255, 255, 255, 0.08);
 }

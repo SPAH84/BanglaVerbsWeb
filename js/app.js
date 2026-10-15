@@ -1,10 +1,10 @@
 // app.js - Main Application Controller for BanglaVerbsWeb
 // Powered by Live Cloud Neural TTS + On-Demand IndexedDB Caching
 
-import { VERBS, VERB_SETS, getVerbForms } from "./data/verbs.js?v=36";
-import { TENSES, DEFAULT_TENSE } from "./data/tenses.js?v=36";
-import { tts } from "./tts.js?v=36";
-import { audioCache } from "./cache.js?v=36";
+import { VERBS, VERB_SETS, getVerbForms } from "./data/verbs.js?v=38";
+import { TENSES, DEFAULT_TENSE } from "./data/tenses.js?v=38";
+import { tts } from "./tts.js?v=38";
+import { audioCache } from "./cache.js?v=38";
 
 // --- STATE MANAGEMENT ---
 let selectedTense = DEFAULT_TENSE;
@@ -27,6 +27,9 @@ let currentQuizIndex = 0;
 let quizScore = 0;
 
 // --- DOM ELEMENTS ---
+const helpToggle = document.getElementById("help-toggle");
+const helpModal = document.getElementById("help-modal");
+const helpCloseBtn = document.getElementById("help-close-btn");
 const themeToggle = document.getElementById("theme-toggle");
 const tenseRadios = document.querySelectorAll('input[name="tense-select"]');
 const levelRadios = document.querySelectorAll('input[name="level-select"]');
@@ -90,6 +93,31 @@ document.addEventListener("DOMContentLoaded", () => {
         document.body.classList.toggle("dark-mode");
         document.body.classList.toggle("light-mode");
     });
+
+    // 1b. Help / Quick Start Modal
+    if (helpToggle && helpModal) {
+        helpToggle.addEventListener("click", () => {
+            helpModal.classList.remove("hidden");
+        });
+
+        if (helpCloseBtn) {
+            helpCloseBtn.addEventListener("click", () => {
+                helpModal.classList.add("hidden");
+            });
+        }
+
+        helpModal.addEventListener("click", (e) => {
+            if (e.target === helpModal) {
+                helpModal.classList.add("hidden");
+            }
+        });
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape" && !helpModal.classList.contains("hidden")) {
+                helpModal.classList.add("hidden");
+            }
+        });
+    }
 
     // 2. Navigation
     const mainContent = document.querySelector('.app-main-content');
