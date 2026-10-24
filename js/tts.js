@@ -181,6 +181,42 @@ class TTSEngine {
         return this.speakNative(text, langCode, voiceGender, speechId);
     }
 
+    _ensureAudioGraph() {
+        if (!this.audioCtx) {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (AudioContextClass) this.audioCtx = new AudioContextClass();
+        }
+        if (this.audioCtx && !this.audioSourceNode) {
+            try {
+                this.audioPlayer.crossOrigin = "anonymous";
+                this.audioSourceNode = this.audioCtx.createMediaElementSource(this.audioPlayer);
+                
+                // Formant filter: lowers pitch into natural masculine resonance
+                this.maleFilterNode = this.audioCtx.createBiquadFilter();
+                this.maleFilterNode.type = "lowshelf";
+                this.maleFilterNode.frequency.value = 450;
+                this.maleFilterNode.gain.value = 6.0;
+
+                this.maleHighCut = this.audioCtx.createBiquadFilter();
+                this.maleHighCut.type = "lowpass";
+                this.maleHighCut.frequency.value = 2400;
+
+                // Connect source -> maleFilter -> maleHighCut -> destination
+                this.audioSourceNode.connect(this.maleFilterNode);
+                this.maleFilterNode.connect(this.maleHighCut);
+                this.maleHighCut.connect(this.audioCtx.destination);
+                
+                // Normal direct bypass node
+                this.directGain = this.audioCtx.createGain();
+                this.audioSourceNode.connect(this.directGain);
+                this.directGain.connect(this.audioCtx.destination);
+            } catch (e) {
+                // If createMediaElementSource is blocked or unsupported, fallback gracefully
+                console.warn("MediaElementSource setup:", e);
+            }
+        }
+    }
+
     playAudioUrl(url, voiceGender = "female", speechId) {
         return new Promise((resolve) => {
             if (this.currentSpeechId !== speechId) {
@@ -191,20 +227,27 @@ class TTSEngine {
             this.audioPlayer.referrerPolicy = "no-referrer";
             this.audioPlayer.src = url;
 
-            // Decoupled playback speed & pitch correction:
-            if (voiceGender === "male") {
-                this.audioPlayer.preservesPitch = false;
-                if ('webkitPreservesPitch' in this.audioPlayer) this.audioPlayer.webkitPreservesPitch = false;
-                if ('mozPreservesPitch' in this.audioPlayer) this.audioPlayer.mozPreservesPitch = false;
-                // Keep the pitch anchored in the masculine register (approx 0.80 - 0.84) regardless of playSpeed
-                // When playSpeed is 1.4, this.playSpeed * 0.84 was accelerating to 1.18x which raised the pitch back to female!
-                this.audioPlayer.playbackRate = 0.82;
-            } else {
-                this.audioPlayer.preservesPitch = true;
-                if ('webkitPreservesPitch' in this.audioPlayer) this.audioPlayer.webkitPreservesPitch = true;
-                if ('mozPreservesPitch' in this.audioPlayer) this.audioPlayer.mozPreservesPitch = true;
-                this.audioPlayer.playbackRate = this.playSpeed;
-            }
+            // Decoupled playback speed: ALWAYS speeds up according to user speed selection
+            this.audioPlayer.playbackRate = this.playSpeed;
+            this.audioPlayer.preservesPitch = true;
+            if ('webkitPreservesPitch' in this.audioPlayer) this.audioPlayer.webkitPreservesPitch = true;
+            if ('mozPreservesPitch' in this.audioPlayer) this.audioPlayer.mozPreservesPitch = true;
+
+            // Apply Web Audio masculine formant resonance if available
+            try {
+                this._ensureAudioGraph();
+                if (this.audioCtx && this.directGain && this.maleFilterNode) {
+                    if (voiceGender === "male") {
+                        this.directGain.gain.value = 0.0;
+                        this.maleFilterNode.gain.value = 7.0;
+                        this.maleHighCut.frequency.value = 2200;
+                    } else {
+                        this.directGain.gain.value = 1.0;
+                        this.maleFilterNode.gain.value = 0.0;
+                        this.maleHighCut.frequency.value = 20000;
+                    }
+                }
+            } catch (e) {}
 
             let resolved = false;
             let timeoutId = null;
