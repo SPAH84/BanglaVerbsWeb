@@ -191,19 +191,19 @@ class TTSEngine {
             this.audioPlayer.referrerPolicy = "no-referrer";
             this.audioPlayer.src = url;
 
-            // Decoupled playback speed (0.8x, 1.0x, 1.2x, 1.4x)
-            this.audioPlayer.playbackRate = this.playSpeed;
-
-            // Pitch adjustment for Male voice:
+            // Decoupled playback speed & pitch correction:
             if (voiceGender === "male") {
                 this.audioPlayer.preservesPitch = false;
                 if ('webkitPreservesPitch' in this.audioPlayer) this.audioPlayer.webkitPreservesPitch = false;
                 if ('mozPreservesPitch' in this.audioPlayer) this.audioPlayer.mozPreservesPitch = false;
-                this.audioPlayer.playbackRate = this.playSpeed * 0.84;
+                // Keep the pitch anchored in the masculine register (approx 0.80 - 0.84) regardless of playSpeed
+                // When playSpeed is 1.4, this.playSpeed * 0.84 was accelerating to 1.18x which raised the pitch back to female!
+                this.audioPlayer.playbackRate = 0.82;
             } else {
                 this.audioPlayer.preservesPitch = true;
                 if ('webkitPreservesPitch' in this.audioPlayer) this.audioPlayer.webkitPreservesPitch = true;
                 if ('mozPreservesPitch' in this.audioPlayer) this.audioPlayer.mozPreservesPitch = true;
+                this.audioPlayer.playbackRate = this.playSpeed;
             }
 
             let resolved = false;
@@ -269,7 +269,8 @@ class TTSEngine {
             if (isEnglish) {
                 if (voiceGender === "male") {
                     bestVoice = langVoices.find(v => /guy|daniel|david|alex|oliver|george|male|google uk english male/i.test(v.name));
-                    utterance.pitch = 0.82;
+                    // Compensate pitch down if rate is fast so speech synthesis doesn't sound chipmunked
+                    utterance.pitch = Math.max(0.65, 0.82 - (this.playSpeed - 1.0) * 0.15);
                 } else {
                     bestVoice = langVoices.find(v => /samantha|karen|victoria|zira|jenny|aria|female|google us english/i.test(v.name));
                     utterance.pitch = 1.05;
@@ -278,7 +279,9 @@ class TTSEngine {
                 // Bengali voices
                 if (voiceGender === "male") {
                     bestVoice = langVoices.find(v => /bashkar|pradeep|male|পুরুষ/i.test(v.name));
-                    utterance.pitch = bestVoice ? 0.92 : 0.68;
+                    const basePitch = bestVoice ? 0.90 : 0.65;
+                    // Lower pitch slightly more at 1.2x and 1.4x to guarantee rich masculine timbre
+                    utterance.pitch = Math.max(0.55, basePitch - (this.playSpeed - 1.0) * 0.12);
                 } else {
                     bestVoice = langVoices.find(v => /nabanita|tanishaa|female|lekha|মহিলা/i.test(v.name));
                     utterance.pitch = 1.0;
