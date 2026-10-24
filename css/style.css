@@ -144,12 +144,14 @@ body {
     transform: scale(0.92);
 }
 
-/* Theme Toggle Icons */
-.sun-icon { display: none; width: 20px; height: 20px; }
-.moon-icon { display: block; width: 20px; height: 20px; }
+/* Theme Toggle Icons:
+   In dark mode, show the SUN icon to switch to light mode.
+   In light mode, show the MOON icon to switch to dark mode. */
+.sun-icon { display: block; width: 20px; height: 20px; }
+.moon-icon { display: none; width: 20px; height: 20px; }
 
-body.light-mode .sun-icon { display: block; }
-body.light-mode .moon-icon { display: none; }
+body.light-mode .sun-icon { display: none; }
+body.light-mode .moon-icon { display: block; }
 
 /* Tense Controller styling */
 .tense-selector-bar {
