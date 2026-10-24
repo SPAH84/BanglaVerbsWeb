@@ -181,6 +181,30 @@ class TTSEngine {
         return false;
     }
 
+    _applyVoicePitchAndRate(voiceGender) {
+        // Chromium/Safari: playbackRate and preservesPitch MUST be set after src or on loadstart
+        if (voiceGender === "male") {
+            // Uncheck pitch preservation so the lower playback rate shifts frequency into masculine register
+            this.audioPlayer.preservesPitch = false;
+            if ('webkitPreservesPitch' in this.audioPlayer) this.audioPlayer.webkitPreservesPitch = false;
+            if ('mozPreservesPitch' in this.audioPlayer) this.audioPlayer.mozPreservesPitch = false;
+            
+            // To produce a male pitch AND scale with the user's chosen speed:
+            // Base male pitch shift factor is 0.78 (lowers high-pitch female speech into rich male register).
+            // Multiply by playSpeed so 1.4x actually speeds up proportionately!
+            const effectiveRate = Math.min(1.25, Math.max(0.60, this.playSpeed * 0.78));
+            this.audioPlayer.playbackRate = effectiveRate;
+            this.audioPlayer.defaultPlaybackRate = effectiveRate;
+        } else {
+            // Female voice: keep natural pitch intact and scale directly to playSpeed
+            this.audioPlayer.preservesPitch = true;
+            if ('webkitPreservesPitch' in this.audioPlayer) this.audioPlayer.webkitPreservesPitch = true;
+            if ('mozPreservesPitch' in this.audioPlayer) this.audioPlayer.mozPreservesPitch = true;
+            this.audioPlayer.playbackRate = this.playSpeed;
+            this.audioPlayer.defaultPlaybackRate = this.playSpeed;
+        }
+    }
+
     playAudioUrl(url, voiceGender = "female", speechId) {
         return new Promise((resolve) => {
             if (this.currentSpeechId !== speechId) {
@@ -191,20 +215,15 @@ class TTSEngine {
             this.audioPlayer.referrerPolicy = "no-referrer";
             this.audioPlayer.src = url;
 
-            // Decoupled playback speed & pitch adjustment:
-            if (voiceGender === "male") {
-                // Lower pitch into masculine register while scaling cleanly with chosen speed:
-                this.audioPlayer.preservesPitch = false;
-                if ('webkitPreservesPitch' in this.audioPlayer) this.audioPlayer.webkitPreservesPitch = false;
-                if ('mozPreservesPitch' in this.audioPlayer) this.audioPlayer.mozPreservesPitch = false;
-                // Ratio lowers base female voice to masculine register while maintaining tempo scale
-                this.audioPlayer.playbackRate = this.playSpeed * 0.82;
-            } else {
-                this.audioPlayer.preservesPitch = true;
-                if ('webkitPreservesPitch' in this.audioPlayer) this.audioPlayer.webkitPreservesPitch = true;
-                if ('mozPreservesPitch' in this.audioPlayer) this.audioPlayer.mozPreservesPitch = true;
-                this.audioPlayer.playbackRate = this.playSpeed;
-            }
+            // Apply immediately
+            this._applyVoicePitchAndRate(voiceGender);
+
+            // Re-apply on play/playing event because Chrome/Safari resets playbackRate to 1.0 on new audio src!
+            const onAudioStart = () => {
+                this._applyVoicePitchAndRate(voiceGender);
+            };
+            this.audioPlayer.addEventListener("play", onAudioStart, { once: true });
+            this.audioPlayer.addEventListener("loadedmetadata", onAudioStart, { once: true });
 
             let resolved = false;
             let timeoutId = null;
@@ -213,6 +232,8 @@ class TTSEngine {
                 if (!resolved) {
                     resolved = true;
                     if (timeoutId) clearTimeout(timeoutId);
+                    this.audioPlayer.removeEventListener("play", onAudioStart);
+                    this.audioPlayer.removeEventListener("loadedmetadata", onAudioStart);
                     this.audioPlayer.onended = null;
                     this.audioPlayer.onerror = null;
                     resolve(success && this.currentSpeechId === speechId);

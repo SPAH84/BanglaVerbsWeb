@@ -3,7 +3,7 @@
 
 import { VERBS, VERB_SETS, getVerbForms } from "./data/verbs.js?v=40";
 import { TENSES, DEFAULT_TENSE } from "./data/tenses.js?v=40";
-import { tts } from "./tts.js?v=44";
+import { tts } from "./tts.js?v=45";
 import { audioCache } from "./cache.js?v=40";
 
 // --- STATE MANAGEMENT ---
