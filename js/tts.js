@@ -172,49 +172,13 @@ class TTSEngine {
                     })
                     .catch(() => {});
             } catch (e) {}
-            return;
+            return true;
         }
 
-        // Step 3: Fallback — Only if network/stream fails, use device Web Speech API
-        if (this.currentSpeechId !== speechId) return; // Strict guard: do NOT speak local if paused!
-        console.warn(`Online stream unavailable for "${text}" (${langCode}), falling back to local SpeechSynthesis`);
-        return this.speakNative(text, langCode, voiceGender, speechId);
-    }
-
-    _ensureAudioGraph() {
-        if (!this.audioCtx) {
-            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-            if (AudioContextClass) this.audioCtx = new AudioContextClass();
-        }
-        if (this.audioCtx && !this.audioSourceNode) {
-            try {
-                this.audioPlayer.crossOrigin = "anonymous";
-                this.audioSourceNode = this.audioCtx.createMediaElementSource(this.audioPlayer);
-                
-                // Formant filter: lowers pitch into natural masculine resonance
-                this.maleFilterNode = this.audioCtx.createBiquadFilter();
-                this.maleFilterNode.type = "lowshelf";
-                this.maleFilterNode.frequency.value = 450;
-                this.maleFilterNode.gain.value = 6.0;
-
-                this.maleHighCut = this.audioCtx.createBiquadFilter();
-                this.maleHighCut.type = "lowpass";
-                this.maleHighCut.frequency.value = 2400;
-
-                // Connect source -> maleFilter -> maleHighCut -> destination
-                this.audioSourceNode.connect(this.maleFilterNode);
-                this.maleFilterNode.connect(this.maleHighCut);
-                this.maleHighCut.connect(this.audioCtx.destination);
-                
-                // Normal direct bypass node
-                this.directGain = this.audioCtx.createGain();
-                this.audioSourceNode.connect(this.directGain);
-                this.directGain.connect(this.audioCtx.destination);
-            } catch (e) {
-                // If createMediaElementSource is blocked or unsupported, fallback gracefully
-                console.warn("MediaElementSource setup:", e);
-            }
-        }
+        // Local browser SpeechSynthesis has been completely scrapped as requested.
+        // It produced robotic, metallic computer sounds on macOS/Chrome.
+        console.warn(`Online audio stream could not play for "${text}" (${langCode}).`);
+        return false;
     }
 
     playAudioUrl(url, voiceGender = "female", speechId) {
@@ -227,27 +191,20 @@ class TTSEngine {
             this.audioPlayer.referrerPolicy = "no-referrer";
             this.audioPlayer.src = url;
 
-            // Decoupled playback speed: ALWAYS speeds up according to user speed selection
-            this.audioPlayer.playbackRate = this.playSpeed;
-            this.audioPlayer.preservesPitch = true;
-            if ('webkitPreservesPitch' in this.audioPlayer) this.audioPlayer.webkitPreservesPitch = true;
-            if ('mozPreservesPitch' in this.audioPlayer) this.audioPlayer.mozPreservesPitch = true;
-
-            // Apply Web Audio masculine formant resonance if available
-            try {
-                this._ensureAudioGraph();
-                if (this.audioCtx && this.directGain && this.maleFilterNode) {
-                    if (voiceGender === "male") {
-                        this.directGain.gain.value = 0.0;
-                        this.maleFilterNode.gain.value = 7.0;
-                        this.maleHighCut.frequency.value = 2200;
-                    } else {
-                        this.directGain.gain.value = 1.0;
-                        this.maleFilterNode.gain.value = 0.0;
-                        this.maleHighCut.frequency.value = 20000;
-                    }
-                }
-            } catch (e) {}
+            // Decoupled playback speed & pitch adjustment:
+            if (voiceGender === "male") {
+                // Lower pitch into masculine register while scaling cleanly with chosen speed:
+                this.audioPlayer.preservesPitch = false;
+                if ('webkitPreservesPitch' in this.audioPlayer) this.audioPlayer.webkitPreservesPitch = false;
+                if ('mozPreservesPitch' in this.audioPlayer) this.audioPlayer.mozPreservesPitch = false;
+                // Ratio lowers base female voice to masculine register while maintaining tempo scale
+                this.audioPlayer.playbackRate = this.playSpeed * 0.82;
+            } else {
+                this.audioPlayer.preservesPitch = true;
+                if ('webkitPreservesPitch' in this.audioPlayer) this.audioPlayer.webkitPreservesPitch = true;
+                if ('mozPreservesPitch' in this.audioPlayer) this.audioPlayer.mozPreservesPitch = true;
+                this.audioPlayer.playbackRate = this.playSpeed;
+            }
 
             let resolved = false;
             let timeoutId = null;
@@ -274,110 +231,6 @@ class TTSEngine {
             if (p !== undefined) {
                 p.catch(() => finish(false));
             }
-        });
-    }
-
-    // High-Quality Native Web Speech Engine with Gender Matching & Immediate Abort Guards
-    async speakNative(text, lang = "en", voiceGender = "female", speechId) {
-        if (!('speechSynthesis' in window)) return false;
-        if (this.currentSpeechId !== speechId) return false;
-
-        let voices = this.getVoices();
-        if (!voices || voices.length === 0) {
-            voices = await this.voicesReady;
-        }
-
-        if (this.currentSpeechId !== speechId) return false;
-
-        const isEnglish = lang === "en" || lang.startsWith("en");
-        const targetCode = isEnglish ? "en" : "bn";
-        const langVoices = (voices || []).filter(v => v.lang && v.lang.toLowerCase().includes(targetCode));
-
-        if (langVoices.length === 0) {
-            return false;
-        }
-
-        return new Promise((resolve) => {
-            if (this.currentSpeechId !== speechId) {
-                resolve(false);
-                return;
-            }
-
-            const utterance = new SpeechSynthesisUtterance(text);
-            this.currentUtterance = utterance;
-            utterance.rate = this.playSpeed;
-            utterance.lang = isEnglish ? "en-US" : "bn-BD";
-
-            let bestVoice = null;
-            if (isEnglish) {
-                if (voiceGender === "male") {
-                    bestVoice = langVoices.find(v => /guy|daniel|david|alex|oliver|george|male|google uk english male/i.test(v.name));
-                    // Compensate pitch down if rate is fast so speech synthesis doesn't sound chipmunked
-                    utterance.pitch = Math.max(0.65, 0.82 - (this.playSpeed - 1.0) * 0.15);
-                } else {
-                    bestVoice = langVoices.find(v => /samantha|karen|victoria|zira|jenny|aria|female|google us english/i.test(v.name));
-                    utterance.pitch = 1.05;
-                }
-            } else {
-                // Bengali voices
-                if (voiceGender === "male") {
-                    bestVoice = langVoices.find(v => /bashkar|pradeep|male|পুরুষ/i.test(v.name));
-                    const basePitch = bestVoice ? 0.90 : 0.65;
-                    // Lower pitch slightly more at 1.2x and 1.4x to guarantee rich masculine timbre
-                    utterance.pitch = Math.max(0.55, basePitch - (this.playSpeed - 1.0) * 0.12);
-                } else {
-                    bestVoice = langVoices.find(v => /nabanita|tanishaa|female|lekha|মহিলা/i.test(v.name));
-                    utterance.pitch = 1.0;
-                }
-            }
-
-            utterance.voice = bestVoice || langVoices[0];
-
-            let started = false;
-            let finished = false;
-            let startTimer = null;
-            let safetyTimer = null;
-
-            const finish = (success) => {
-                if (!finished) {
-                    finished = true;
-                    if (startTimer) clearTimeout(startTimer);
-                    if (safetyTimer) clearTimeout(safetyTimer);
-                    this.currentUtterance = null;
-                    resolve(success && this.currentSpeechId === speechId);
-                }
-            };
-
-            // If speech synthesis doesn't start within 500ms, abort
-            startTimer = setTimeout(() => {
-                if (!started) {
-                    try { window.speechSynthesis.cancel(); } catch (e) {}
-                    finish(false);
-                }
-            }, 500);
-
-            // Safety max duration
-            safetyTimer = setTimeout(() => finish(true), 4500);
-
-            utterance.onstart = () => {
-                started = true;
-                if (startTimer) clearTimeout(startTimer);
-                if (this.currentSpeechId !== speechId) {
-                    try { window.speechSynthesis.cancel(); } catch (e) {}
-                    finish(false);
-                }
-            };
-
-            utterance.onend = () => finish(true);
-            utterance.onerror = () => finish(false);
-
-            try {
-                if (window.speechSynthesis.paused) {
-                    window.speechSynthesis.resume();
-                }
-            } catch (e) {}
-
-            window.speechSynthesis.speak(utterance);
         });
     }
 }
