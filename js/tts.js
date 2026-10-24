@@ -124,7 +124,7 @@ class TTSEngine {
         return `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodedText}&tl=${tl}&client=tw-ob`;
     }
 
-    // Main speech controller
+    // Main speech controller — Strongly prefers Online Neural Stream & IndexedDB Audio Cache
     async speak(text, lang = "bn-BD", voiceGender = "female") {
         this.stop();
         this.unlockAudioSession();
@@ -132,54 +132,39 @@ class TTSEngine {
         if (!text || !text.trim()) return;
 
         const isEnglish = lang === "en" || lang.startsWith("en");
+        const langCode = isEnglish ? "en" : "bn";
 
-        // 1. English prompts: Use Natural Studio Voice with Gender Matching
-        if (isEnglish) {
-            const played = await this.speakNative(text, "en", voiceGender);
-            if (played) return;
-
-            // Fast fallback: If speech synthesis fails to start, stream Google audio
-            console.warn("SpeechSynthesis did not start for English, falling back to audio stream");
-            const streamUrl = this.getTTSStreamUrl(text, "en");
-            return this.playAudioUrl(streamUrl, voiceGender);
-        }
-
-        // 2. Bengali Male Voice: Use SpeechSynthesis (Edge Bashkar or pitch-shifted Google বাংলা / Lekha)
-        if (voiceGender === "male") {
-            const played = await this.speakNative(text, "bn", "male");
-            if (played) return;
-        }
-
-        // 3. Bengali: Check local IndexedDB cache
+        // Step 1: Check local IndexedDB cache (instant playback of previously streamed audio)
         try {
-            const cachedUrl = await audioCache.getAudio(lang, voiceGender, text);
+            const cachedUrl = await audioCache.getAudio(langCode, voiceGender, text);
             if (cachedUrl) {
                 const cachedOk = await this.playAudioUrl(cachedUrl, voiceGender);
                 if (cachedOk) return;
             }
         } catch (err) {
-            console.warn("Cache read error:", err);
+            console.warn("Audio cache read error:", err);
         }
 
-        // 4. Bengali: Stream via <audio> element
-        const streamUrl = this.getTTSStreamUrl(text, "bn");
-        const played = await this.playAudioUrl(streamUrl, voiceGender);
+        // Step 2: Primary — Stream high-fidelity online neural audio
+        const streamUrl = this.getTTSStreamUrl(text, langCode);
+        const streamPlayed = await this.playAudioUrl(streamUrl, voiceGender);
 
-        if (played) {
-            // Background cache attempt
+        if (streamPlayed) {
+            // Save successful audio stream to cache in background for instant offline repeat
             try {
                 fetch(streamUrl, { referrerPolicy: 'no-referrer' })
                     .then(r => r.ok ? r.blob() : null)
                     .then(blob => {
-                        if (blob) audioCache.saveAudio(lang, voiceGender, text, blob).catch(() => {});
+                        if (blob) audioCache.saveAudio(langCode, voiceGender, text, blob).catch(() => {});
                     })
                     .catch(() => {});
             } catch (e) {}
             return;
         }
 
-        // 5. Fallback: Browser Web Speech API for Bengali
-        return this.speakNative(text, "bn", voiceGender);
+        // Step 3: Fallback — Only if network/stream fails, use device Web Speech API
+        console.warn(`Online stream unavailable for "${text}" (${langCode}), falling back to local SpeechSynthesis`);
+        return this.speakNative(text, langCode, voiceGender);
     }
 
     playAudioUrl(url, voiceGender = "female") {
