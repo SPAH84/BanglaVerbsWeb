@@ -1,7 +1,7 @@
-// tts.js v36 — High-Quality Cross-Browser Audio Engine for Bangla Verb Drills
-// Features: True Female & Male Voice Selection for BOTH English & Bangla + Decoupled Pitch & Speed + 4 Tenses
+// tts.js v40 — High-Quality Cross-Browser Audio Engine for Bangla Verb Drills
+// Features: True Female & Male Voice Selection + Decoupled Pitch & Speed (up to 1.4x) + Instant Pause Cancellation
 
-import { audioCache } from "./cache.js?v=36";
+import { audioCache } from "./cache.js?v=38";
 
 class TTSEngine {
     constructor() {
@@ -9,10 +9,13 @@ class TTSEngine {
         this.audioPlayer.preload = "auto";
         this.audioPlayer.referrerPolicy = "no-referrer";
         this.audioCtx = null;
+        this.audioSourceNode = null;
+        this.filterNode = null;
         this.keepAliveNode = null;
         this.isUnlocked = false;
         this.playSpeed = 1.0;
-        this.currentUtterance = null; // Guard against Chrome garbage collection bug
+        this.currentSpeechId = 0;
+        this.currentUtterance = null;
 
         // Preload voices with promise to resolve async loading in Chrome & Edge
         this.voicesReady = this._initVoices();
@@ -29,7 +32,6 @@ class TTSEngine {
             const immediate = window.speechSynthesis.getVoices();
             if (immediate && immediate.length > 0) { resolve(immediate); return; }
 
-            // In Chrome/Edge, voices load asynchronously via voiceschanged
             const onChanged = () => {
                 const v = window.speechSynthesis.getVoices() || [];
                 if (v.length > 0) {
@@ -39,7 +41,6 @@ class TTSEngine {
             };
             window.speechSynthesis.addEventListener('voiceschanged', onChanged);
 
-            // Safety fallback if event doesn't fire
             setTimeout(() => {
                 window.speechSynthesis.removeEventListener('voiceschanged', onChanged);
                 resolve(window.speechSynthesis.getVoices() || []);
@@ -72,7 +73,6 @@ class TTSEngine {
 
         if (!this.isUnlocked) {
             try {
-                // Standalone throwaway audio element keeps this.audioPlayer clean
                 const dummy = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
                 dummy.play().catch(() => {});
             } catch (e) {}
@@ -107,15 +107,20 @@ class TTSEngine {
         } catch (e) {}
     }
 
+    // Immediately aborts any ongoing or pending speech
     stop() {
+        this.currentSpeechId++; // Invalidate any running speak() promises immediately
         if (this.audioPlayer) {
             this.audioPlayer.pause();
+            this.audioPlayer.removeAttribute("src");
+            this.audioPlayer.load();
             this.audioPlayer.onended = null;
             this.audioPlayer.onerror = null;
         }
-        if ('speechSynthesis' in window && window.speechSynthesis.speaking) {
+        if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
         }
+        this.currentUtterance = null;
     }
 
     getTTSStreamUrl(text, lang = "bn") {
@@ -129,6 +134,8 @@ class TTSEngine {
         this.stop();
         this.unlockAudioSession();
 
+        const speechId = this.currentSpeechId;
+
         if (!text || !text.trim()) return;
 
         const isEnglish = lang === "en" || lang.startsWith("en");
@@ -137,17 +144,23 @@ class TTSEngine {
         // Step 1: Check local IndexedDB cache (instant playback of previously streamed audio)
         try {
             const cachedUrl = await audioCache.getAudio(langCode, voiceGender, text);
+            if (this.currentSpeechId !== speechId) return; // Aborted by user pause
+
             if (cachedUrl) {
-                const cachedOk = await this.playAudioUrl(cachedUrl, voiceGender);
-                if (cachedOk) return;
+                const cachedOk = await this.playAudioUrl(cachedUrl, voiceGender, speechId);
+                if (cachedOk || this.currentSpeechId !== speechId) return;
             }
         } catch (err) {
             console.warn("Audio cache read error:", err);
         }
 
+        if (this.currentSpeechId !== speechId) return;
+
         // Step 2: Primary — Stream high-fidelity online neural audio
         const streamUrl = this.getTTSStreamUrl(text, langCode);
-        const streamPlayed = await this.playAudioUrl(streamUrl, voiceGender);
+        const streamPlayed = await this.playAudioUrl(streamUrl, voiceGender, speechId);
+
+        if (this.currentSpeechId !== speechId) return; // Aborted by user pause
 
         if (streamPlayed) {
             // Save successful audio stream to cache in background for instant offline repeat
@@ -163,27 +176,34 @@ class TTSEngine {
         }
 
         // Step 3: Fallback — Only if network/stream fails, use device Web Speech API
+        if (this.currentSpeechId !== speechId) return; // Strict guard: do NOT speak local if paused!
         console.warn(`Online stream unavailable for "${text}" (${langCode}), falling back to local SpeechSynthesis`);
-        return this.speakNative(text, langCode, voiceGender);
+        return this.speakNative(text, langCode, voiceGender, speechId);
     }
 
-    playAudioUrl(url, voiceGender = "female") {
+    playAudioUrl(url, voiceGender = "female", speechId) {
         return new Promise((resolve) => {
+            if (this.currentSpeechId !== speechId) {
+                resolve(false);
+                return;
+            }
+
             this.audioPlayer.referrerPolicy = "no-referrer";
             this.audioPlayer.src = url;
 
-            // For male voice fallback on the Google stream:
-            // Shift pitch down into natural male register without breaking user-chosen speed
+            // Decoupled playback speed (0.8x, 1.0x, 1.2x, 1.4x)
+            this.audioPlayer.playbackRate = this.playSpeed;
+
+            // Pitch adjustment for Male voice:
             if (voiceGender === "male") {
                 this.audioPlayer.preservesPitch = false;
                 if ('webkitPreservesPitch' in this.audioPlayer) this.audioPlayer.webkitPreservesPitch = false;
                 if ('mozPreservesPitch' in this.audioPlayer) this.audioPlayer.mozPreservesPitch = false;
-                this.audioPlayer.playbackRate = this.playSpeed * 0.86;
+                this.audioPlayer.playbackRate = this.playSpeed * 0.84;
             } else {
                 this.audioPlayer.preservesPitch = true;
                 if ('webkitPreservesPitch' in this.audioPlayer) this.audioPlayer.webkitPreservesPitch = true;
                 if ('mozPreservesPitch' in this.audioPlayer) this.audioPlayer.mozPreservesPitch = true;
-                this.audioPlayer.playbackRate = this.playSpeed;
             }
 
             let resolved = false;
@@ -195,52 +215,51 @@ class TTSEngine {
                     if (timeoutId) clearTimeout(timeoutId);
                     this.audioPlayer.onended = null;
                     this.audioPlayer.onerror = null;
-                    resolve(success);
+                    resolve(success && this.currentSpeechId === speechId);
                 }
             };
 
             // Safety timeout (4s) so drill loop never hangs
             timeoutId = setTimeout(() => {
-                console.warn("Audio stream playback timed out for:", url);
                 finish(false);
             }, 4000);
 
             this.audioPlayer.onended = () => finish(true);
-            this.audioPlayer.onerror = (e) => {
-                console.warn("Audio stream failed for:", url, e);
-                finish(false);
-            };
+            this.audioPlayer.onerror = () => finish(false);
 
             const p = this.audioPlayer.play();
             if (p !== undefined) {
-                p.catch((err) => {
-                    console.warn("audioPlayer.play() rejected:", err);
-                    finish(false);
-                });
+                p.catch(() => finish(false));
             }
         });
     }
 
-    // High-Quality Native Web Speech Engine with Gender Matching & Chrome Bug Fixes
-    async speakNative(text, lang = "en", voiceGender = "female") {
+    // High-Quality Native Web Speech Engine with Gender Matching & Immediate Abort Guards
+    async speakNative(text, lang = "en", voiceGender = "female", speechId) {
         if (!('speechSynthesis' in window)) return false;
+        if (this.currentSpeechId !== speechId) return false;
 
-        // Ensure voices are loaded before picking
         let voices = this.getVoices();
         if (!voices || voices.length === 0) {
             voices = await this.voicesReady;
         }
 
+        if (this.currentSpeechId !== speechId) return false;
+
         const isEnglish = lang === "en" || lang.startsWith("en");
         const targetCode = isEnglish ? "en" : "bn";
         const langVoices = (voices || []).filter(v => v.lang && v.lang.toLowerCase().includes(targetCode));
 
-        // If no voices available for this language, return false so stream fallback takes over immediately
         if (langVoices.length === 0) {
             return false;
         }
 
         return new Promise((resolve) => {
+            if (this.currentSpeechId !== speechId) {
+                resolve(false);
+                return;
+            }
+
             const utterance = new SpeechSynthesisUtterance(text);
             this.currentUtterance = utterance;
             utterance.rate = this.playSpeed;
@@ -250,7 +269,7 @@ class TTSEngine {
             if (isEnglish) {
                 if (voiceGender === "male") {
                     bestVoice = langVoices.find(v => /guy|daniel|david|alex|oliver|george|male|google uk english male/i.test(v.name));
-                    utterance.pitch = 0.85;
+                    utterance.pitch = 0.82;
                 } else {
                     bestVoice = langVoices.find(v => /samantha|karen|victoria|zira|jenny|aria|female|google us english/i.test(v.name));
                     utterance.pitch = 1.05;
@@ -259,8 +278,7 @@ class TTSEngine {
                 // Bengali voices
                 if (voiceGender === "male") {
                     bestVoice = langVoices.find(v => /bashkar|pradeep|male|পুরুষ/i.test(v.name));
-                    // If native male neural voice found (e.g. Edge Bashkar), pitch is 0.95; otherwise lower pitch to masculine register (0.72)
-                    utterance.pitch = bestVoice ? 0.95 : 0.72;
+                    utterance.pitch = bestVoice ? 0.92 : 0.68;
                 } else {
                     bestVoice = langVoices.find(v => /nabanita|tanishaa|female|lekha|মহিলা/i.test(v.name));
                     utterance.pitch = 1.0;
@@ -280,34 +298,33 @@ class TTSEngine {
                     if (startTimer) clearTimeout(startTimer);
                     if (safetyTimer) clearTimeout(safetyTimer);
                     this.currentUtterance = null;
-                    resolve(success);
+                    resolve(success && this.currentSpeechId === speechId);
                 }
             };
 
-            // If speech synthesis doesn't start within 400ms (e.g. Chrome silent drop), abort and report failure
+            // If speech synthesis doesn't start within 500ms, abort
             startTimer = setTimeout(() => {
                 if (!started) {
-                    console.warn("SpeechSynthesis did not start within 400ms");
                     try { window.speechSynthesis.cancel(); } catch (e) {}
                     finish(false);
                 }
-            }, 400);
+            }, 500);
 
-            // Safety max duration (4.5s)
+            // Safety max duration
             safetyTimer = setTimeout(() => finish(true), 4500);
 
             utterance.onstart = () => {
                 started = true;
                 if (startTimer) clearTimeout(startTimer);
+                if (this.currentSpeechId !== speechId) {
+                    try { window.speechSynthesis.cancel(); } catch (e) {}
+                    finish(false);
+                }
             };
 
             utterance.onend = () => finish(true);
-            utterance.onerror = (err) => {
-                console.warn("SpeechSynthesis error:", err);
-                finish(false);
-            };
+            utterance.onerror = () => finish(false);
 
-            // Resume speech synthesis if suspended by browser
             try {
                 if (window.speechSynthesis.paused) {
                     window.speechSynthesis.resume();

@@ -1,10 +1,10 @@
 // app.js - Main Application Controller for BanglaVerbsWeb
 // Powered by Live Cloud Neural TTS + On-Demand IndexedDB Caching
 
-import { VERBS, VERB_SETS, getVerbForms } from "./data/verbs.js?v=38";
-import { TENSES, DEFAULT_TENSE } from "./data/tenses.js?v=38";
-import { tts } from "./tts.js?v=39";
-import { audioCache } from "./cache.js?v=38";
+import { VERBS, VERB_SETS, getVerbForms } from "./data/verbs.js?v=40";
+import { TENSES, DEFAULT_TENSE } from "./data/tenses.js?v=40";
+import { tts } from "./tts.js?v=40";
+import { audioCache } from "./cache.js?v=40";
 
 // --- STATE MANAGEMENT ---
 let selectedTense = DEFAULT_TENSE;
@@ -190,6 +190,8 @@ document.addEventListener("DOMContentLoaded", () => {
     genderRadios.forEach(radio => {
         radio.addEventListener("change", (e) => {
             selectedGender = e.target.value;
+            // Stop whatever is speaking right now so the switch takes effect immediately
+            tts.stop();
         });
     });
 

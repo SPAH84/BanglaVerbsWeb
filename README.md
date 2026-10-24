@@ -35,7 +35,7 @@ BanglaVerbs is designed to build automatic speech reflexes through active listen
 | **Play / Pause** | Center button | Start or pause the drill at any point |
 | **Next / Prev** | Player arrows | Skip ahead or revisit any verb |
 | **Voice Selector** | Settings ⚙️ | Toggle between **Female** and **Male** voices |
-| **Speed Control** | Settings ⚙️ | Adjust playback speed (**0.8x**, **1.0x**, **1.2x**) with decoupled pitch preservation |
+| **Speed Control** | Settings ⚙️ | Adjust playback speed (**0.8x**, **1.0x**, **1.2x**, **1.4x**) with decoupled pitch preservation |
 | **Pause Timing** | Settings ⚙️ | Adjust silence sliders (Recall pause, Repeat pause, Gap between verbs) |
 
 ---
