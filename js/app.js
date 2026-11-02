@@ -3,7 +3,7 @@
 
 import { VERBS, VERB_SETS, getVerbForms } from "./data/verbs.js?v=40";
 import { TENSES, DEFAULT_TENSE } from "./data/tenses.js?v=40";
-import { tts } from "./tts.js?v=45";
+import { tts } from "./tts.js?v=46";
 import { audioCache } from "./cache.js?v=40";
 
 // --- STATE MANAGEMENT ---
@@ -33,7 +33,7 @@ const helpCloseBtn = document.getElementById("help-close-btn");
 const themeToggle = document.getElementById("theme-toggle");
 const tenseRadios = document.querySelectorAll('input[name="tense-select"]');
 const levelRadios = document.querySelectorAll('input[name="level-select"]');
-const genderRadios = document.querySelectorAll('input[name="voice-gender"]');
+const voiceButtons = document.querySelectorAll(".voice-btn");
 const navItems = document.querySelectorAll(".nav-item");
 const screens = document.querySelectorAll(".app-screen");
 
@@ -187,9 +187,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // 5. Voice Gender Selector
-    genderRadios.forEach(radio => {
-        radio.addEventListener("change", (e) => {
-            selectedGender = e.target.value;
+    voiceButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            voiceButtons.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            selectedGender = btn.getAttribute("data-gender");
             // Stop whatever is speaking right now so the switch takes effect immediately
             tts.stop();
         });

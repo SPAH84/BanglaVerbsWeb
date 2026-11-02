@@ -1,61 +1,21 @@
-// tts.js v40 — High-Quality Cross-Browser Audio Engine for Bangla Verb Drills
-// Features: True Female & Male Voice Selection + Decoupled Pitch & Speed (up to 1.4x) + Instant Pause Cancellation
+// tts.js v46 — High-Quality Audio Engine for Bangla Verb Drills
+// Pure Google Neural Audio Stream + IndexedDB Caching + Locked Masculine Register at All Speeds
 
-import { audioCache } from "./cache.js?v=38";
+import { audioCache } from "./cache.js?v=46";
 
 class TTSEngine {
     constructor() {
         this.audioPlayer = new Audio();
         this.audioPlayer.preload = "auto";
         this.audioPlayer.referrerPolicy = "no-referrer";
-        this.audioCtx = null;
-        this.audioSourceNode = null;
-        this.filterNode = null;
-        this.keepAliveNode = null;
         this.isUnlocked = false;
         this.playSpeed = 1.0;
         this.currentSpeechId = 0;
-        this.currentUtterance = null;
 
-        // Preload voices with promise to resolve async loading in Chrome & Edge
-        this.voicesReady = this._initVoices();
-
-        // Auto-unlock on first user interaction
+        // Auto-unlock audio session on first user interaction (iOS / Safari / Chrome autoplay policy)
         ['click', 'touchstart', 'keydown'].forEach(evt => {
             document.addEventListener(evt, () => this.unlockAudioSession(), { once: true, passive: true });
         });
-    }
-
-    _initVoices() {
-        return new Promise(resolve => {
-            if (!('speechSynthesis' in window)) { resolve([]); return; }
-            const immediate = window.speechSynthesis.getVoices();
-            if (immediate && immediate.length > 0) { resolve(immediate); return; }
-
-            const onChanged = () => {
-                const v = window.speechSynthesis.getVoices() || [];
-                if (v.length > 0) {
-                    window.speechSynthesis.removeEventListener('voiceschanged', onChanged);
-                    resolve(v);
-                }
-            };
-            window.speechSynthesis.addEventListener('voiceschanged', onChanged);
-
-            setTimeout(() => {
-                window.speechSynthesis.removeEventListener('voiceschanged', onChanged);
-                resolve(window.speechSynthesis.getVoices() || []);
-            }, 1500);
-        });
-    }
-
-    getVoices() {
-        if (!('speechSynthesis' in window)) return [];
-        return window.speechSynthesis.getVoices() || [];
-    }
-
-    hasBengaliVoice() {
-        const voices = this.getVoices();
-        return voices.some(v => v.lang && v.lang.toLowerCase().includes("bn"));
     }
 
     setSpeed(speed) {
@@ -63,14 +23,6 @@ class TTSEngine {
     }
 
     unlockAudioSession() {
-        if (!this.audioCtx) {
-            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-            if (AudioContextClass) this.audioCtx = new AudioContextClass();
-        }
-        if (this.audioCtx && this.audioCtx.state === 'suspended') {
-            this.audioCtx.resume();
-        }
-
         if (!this.isUnlocked) {
             try {
                 const dummy = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
@@ -80,47 +32,17 @@ class TTSEngine {
         }
     }
 
-    startKeepAlive() {
-        try {
-            this.unlockAudioSession();
-            if (this.audioCtx && !this.keepAliveNode) {
-                const osc = this.audioCtx.createOscillator();
-                const gain = this.audioCtx.createGain();
-                gain.gain.value = 0.00001; // Inaudible keep-alive signal
-                osc.connect(gain);
-                gain.connect(this.audioCtx.destination);
-                osc.start();
-                this.keepAliveNode = { osc, gain };
-            }
-        } catch (e) {
-            console.warn("Audio keep-alive notice:", e);
-        }
-    }
-
-    stopKeepAlive() {
-        try {
-            if (this.keepAliveNode) {
-                this.keepAliveNode.osc.stop();
-                this.keepAliveNode.osc.disconnect();
-                this.keepAliveNode = null;
-            }
-        } catch (e) {}
-    }
-
-    // Immediately aborts any ongoing or pending speech
+    // Immediately aborts any ongoing or pending speech without resetting audio engine
     stop() {
         this.currentSpeechId++; // Invalidate any running speak() promises immediately
         if (this.audioPlayer) {
             this.audioPlayer.pause();
-            this.audioPlayer.removeAttribute("src");
-            this.audioPlayer.load();
+            try {
+                this.audioPlayer.currentTime = 0;
+            } catch (e) {}
             this.audioPlayer.onended = null;
             this.audioPlayer.onerror = null;
         }
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
-        }
-        this.currentUtterance = null;
     }
 
     getTTSStreamUrl(text, lang = "bn") {
@@ -129,14 +51,107 @@ class TTSEngine {
         return `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodedText}&tl=${tl}&client=tw-ob`;
     }
 
-    // Main speech controller — Strongly prefers Online Neural Stream & IndexedDB Audio Cache
+    // Calculates and applies pitch preservation flags and playback rates
+    _applyVoicePitchAndRate(voiceGender) {
+        const isMale = (voiceGender === "male");
+        const targetPreserves = !isMale;
+
+        let targetRate;
+        if (isMale) {
+            // Continuous masculine speed scaling:
+            // 0.8x -> 0.63 (slow, deep male)
+            // 1.0x -> 0.70 (standard speed, rich baritone male)
+            // 1.2x -> 0.77 (brisk speed, distinct masculine register)
+            // 1.4x -> 0.84 (fast speed, strictly locked in male register)
+            // Target rate is strictly capped at 0.84 so pitch NEVER reverts to female or chipmunk!
+            targetRate = Math.min(0.84, Math.max(0.58, 0.70 + (this.playSpeed - 1.0) * 0.35));
+        } else {
+            // Female voice: keep natural pitch intact and scale directly to playSpeed
+            targetRate = this.playSpeed;
+        }
+
+        // 1. Pitch preservation flags (must be false for male to lower pitch; true for female)
+        if (this.audioPlayer.preservesPitch !== targetPreserves) {
+            this.audioPlayer.preservesPitch = targetPreserves;
+        }
+        if ('webkitPreservesPitch' in this.audioPlayer && this.audioPlayer.webkitPreservesPitch !== targetPreserves) {
+            this.audioPlayer.webkitPreservesPitch = targetPreserves;
+        }
+        if ('mozPreservesPitch' in this.audioPlayer && this.audioPlayer.mozPreservesPitch !== targetPreserves) {
+            this.audioPlayer.mozPreservesPitch = targetPreserves;
+        }
+
+        // 2. Playback rates (only update if changed to avoid triggering unnecessary ratechange events)
+        if (Math.abs(this.audioPlayer.playbackRate - targetRate) > 0.005) {
+            this.audioPlayer.playbackRate = targetRate;
+        }
+        if (Math.abs(this.audioPlayer.defaultPlaybackRate - targetRate) > 0.005) {
+            this.audioPlayer.defaultPlaybackRate = targetRate;
+        }
+    }
+
+    // Primary audio playback engine
+    playAudioUrl(url, voiceGender = "female", speechId) {
+        return new Promise((resolve) => {
+            if (this.currentSpeechId !== speechId) {
+                resolve(false);
+                return;
+            }
+
+            this.audioPlayer.referrerPolicy = "no-referrer";
+            this.audioPlayer.src = url;
+
+            // Apply immediately upon setting src
+            this._applyVoicePitchAndRate(voiceGender);
+
+            // Chrome and Safari can reset preservesPitch or playbackRate during media initialization.
+            // Re-enforce across all critical lifecycle events:
+            const enforce = () => {
+                if (this.currentSpeechId === speechId) {
+                    this._applyVoicePitchAndRate(voiceGender);
+                }
+            };
+
+            const events = ["loadstart", "loadedmetadata", "loadeddata", "canplay", "play", "playing", "ratechange"];
+            events.forEach(evt => this.audioPlayer.addEventListener(evt, enforce));
+
+            let resolved = false;
+            let timeoutId = null;
+
+            const finish = (success) => {
+                if (!resolved) {
+                    resolved = true;
+                    if (timeoutId) clearTimeout(timeoutId);
+                    events.forEach(evt => this.audioPlayer.removeEventListener(evt, enforce));
+                    this.audioPlayer.onended = null;
+                    this.audioPlayer.onerror = null;
+                    resolve(success && this.currentSpeechId === speechId);
+                }
+            };
+
+            // Safety timeout (5s) so drill loop never hangs
+            timeoutId = setTimeout(() => {
+                finish(false);
+            }, 5000);
+
+            this.audioPlayer.onended = () => finish(true);
+            this.audioPlayer.onerror = () => finish(false);
+
+            const p = this.audioPlayer.play();
+            if (p !== undefined) {
+                p.catch(() => finish(false));
+            }
+        });
+    }
+
+    // Main speech controller — Uses Online Neural Stream & IndexedDB Audio Cache
     async speak(text, lang = "bn-BD", voiceGender = "female") {
         this.stop();
         this.unlockAudioSession();
 
         const speechId = this.currentSpeechId;
 
-        if (!text || !text.trim()) return;
+        if (!text || !text.trim()) return false;
 
         const isEnglish = lang === "en" || lang.startsWith("en");
         const langCode = isEnglish ? "en" : "bn";
@@ -144,23 +159,23 @@ class TTSEngine {
         // Step 1: Check local IndexedDB cache (instant playback of previously streamed audio)
         try {
             const cachedUrl = await audioCache.getAudio(langCode, voiceGender, text);
-            if (this.currentSpeechId !== speechId) return; // Aborted by user pause
+            if (this.currentSpeechId !== speechId) return false; // Aborted by user pause
 
             if (cachedUrl) {
                 const cachedOk = await this.playAudioUrl(cachedUrl, voiceGender, speechId);
-                if (cachedOk || this.currentSpeechId !== speechId) return;
+                if (cachedOk || this.currentSpeechId !== speechId) return cachedOk;
             }
         } catch (err) {
             console.warn("Audio cache read error:", err);
         }
 
-        if (this.currentSpeechId !== speechId) return;
+        if (this.currentSpeechId !== speechId) return false;
 
         // Step 2: Primary — Stream high-fidelity online neural audio
         const streamUrl = this.getTTSStreamUrl(text, langCode);
         const streamPlayed = await this.playAudioUrl(streamUrl, voiceGender, speechId);
 
-        if (this.currentSpeechId !== speechId) return; // Aborted by user pause
+        if (this.currentSpeechId !== speechId) return false; // Aborted by user pause
 
         if (streamPlayed) {
             // Save successful audio stream to cache in background for instant offline repeat
@@ -175,84 +190,8 @@ class TTSEngine {
             return true;
         }
 
-        // Local browser SpeechSynthesis has been completely scrapped as requested.
-        // It produced robotic, metallic computer sounds on macOS/Chrome.
         console.warn(`Online audio stream could not play for "${text}" (${langCode}).`);
         return false;
-    }
-
-    _applyVoicePitchAndRate(voiceGender) {
-        // Chromium/Safari: playbackRate and preservesPitch MUST be set after src or on loadstart
-        if (voiceGender === "male") {
-            // Uncheck pitch preservation so the lower playback rate shifts frequency into masculine register
-            this.audioPlayer.preservesPitch = false;
-            if ('webkitPreservesPitch' in this.audioPlayer) this.audioPlayer.webkitPreservesPitch = false;
-            if ('mozPreservesPitch' in this.audioPlayer) this.audioPlayer.mozPreservesPitch = false;
-            
-            // To produce a male pitch AND scale with the user's chosen speed:
-            // Base male pitch shift factor is 0.78 (lowers high-pitch female speech into rich male register).
-            // Multiply by playSpeed so 1.4x actually speeds up proportionately!
-            const effectiveRate = Math.min(1.25, Math.max(0.60, this.playSpeed * 0.78));
-            this.audioPlayer.playbackRate = effectiveRate;
-            this.audioPlayer.defaultPlaybackRate = effectiveRate;
-        } else {
-            // Female voice: keep natural pitch intact and scale directly to playSpeed
-            this.audioPlayer.preservesPitch = true;
-            if ('webkitPreservesPitch' in this.audioPlayer) this.audioPlayer.webkitPreservesPitch = true;
-            if ('mozPreservesPitch' in this.audioPlayer) this.audioPlayer.mozPreservesPitch = true;
-            this.audioPlayer.playbackRate = this.playSpeed;
-            this.audioPlayer.defaultPlaybackRate = this.playSpeed;
-        }
-    }
-
-    playAudioUrl(url, voiceGender = "female", speechId) {
-        return new Promise((resolve) => {
-            if (this.currentSpeechId !== speechId) {
-                resolve(false);
-                return;
-            }
-
-            this.audioPlayer.referrerPolicy = "no-referrer";
-            this.audioPlayer.src = url;
-
-            // Apply immediately
-            this._applyVoicePitchAndRate(voiceGender);
-
-            // Re-apply on play/playing event because Chrome/Safari resets playbackRate to 1.0 on new audio src!
-            const onAudioStart = () => {
-                this._applyVoicePitchAndRate(voiceGender);
-            };
-            this.audioPlayer.addEventListener("play", onAudioStart, { once: true });
-            this.audioPlayer.addEventListener("loadedmetadata", onAudioStart, { once: true });
-
-            let resolved = false;
-            let timeoutId = null;
-
-            const finish = (success) => {
-                if (!resolved) {
-                    resolved = true;
-                    if (timeoutId) clearTimeout(timeoutId);
-                    this.audioPlayer.removeEventListener("play", onAudioStart);
-                    this.audioPlayer.removeEventListener("loadedmetadata", onAudioStart);
-                    this.audioPlayer.onended = null;
-                    this.audioPlayer.onerror = null;
-                    resolve(success && this.currentSpeechId === speechId);
-                }
-            };
-
-            // Safety timeout (4s) so drill loop never hangs
-            timeoutId = setTimeout(() => {
-                finish(false);
-            }, 4000);
-
-            this.audioPlayer.onended = () => finish(true);
-            this.audioPlayer.onerror = () => finish(false);
-
-            const p = this.audioPlayer.play();
-            if (p !== undefined) {
-                p.catch(() => finish(false));
-            }
-        });
     }
 }
 
