@@ -1,14 +1,17 @@
-// tts.js v46 — High-Quality Audio Engine for Bangla Verb Drills
+// tts.js v47 — High-Quality Audio Engine for Bangla Verb Drills
 // Pure Google Neural Audio Stream + IndexedDB Caching + Locked Masculine Register at All Speeds
 
-import { audioCache } from "./cache.js?v=46";
+import { audioCache } from "./cache.js?v=47";
 
 class TTSEngine {
     constructor() {
         this.audioPlayer = new Audio();
         this.audioPlayer.preload = "auto";
         this.audioPlayer.referrerPolicy = "no-referrer";
+        this.audioCtx = null;
+        this.keepAliveNode = null;
         this.isUnlocked = false;
+        this._isEnforcing = false;
         this.playSpeed = 1.0;
         this.currentSpeechId = 0;
 
@@ -23,6 +26,14 @@ class TTSEngine {
     }
 
     unlockAudioSession() {
+        if (!this.audioCtx) {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (AudioContextClass) this.audioCtx = new AudioContextClass();
+        }
+        if (this.audioCtx && this.audioCtx.state === 'suspended') {
+            this.audioCtx.resume().catch(() => {});
+        }
+
         if (!this.isUnlocked) {
             try {
                 const dummy = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
@@ -30,6 +41,33 @@ class TTSEngine {
             } catch (e) {}
             this.isUnlocked = true;
         }
+    }
+
+    startKeepAlive() {
+        try {
+            this.unlockAudioSession();
+            if (this.audioCtx && !this.keepAliveNode) {
+                const osc = this.audioCtx.createOscillator();
+                const gain = this.audioCtx.createGain();
+                gain.gain.value = 0.00001; // Inaudible keep-alive signal to prevent hardware sleep on mobile
+                osc.connect(gain);
+                gain.connect(this.audioCtx.destination);
+                osc.start();
+                this.keepAliveNode = { osc, gain };
+            }
+        } catch (e) {
+            console.warn("Audio keep-alive notice:", e);
+        }
+    }
+
+    stopKeepAlive() {
+        try {
+            if (this.keepAliveNode) {
+                this.keepAliveNode.osc.stop();
+                this.keepAliveNode.osc.disconnect();
+                this.keepAliveNode = null;
+            }
+        } catch (e) {}
     }
 
     // Immediately aborts any ongoing or pending speech without resetting audio engine
@@ -105,10 +143,16 @@ class TTSEngine {
             this._applyVoicePitchAndRate(voiceGender);
 
             // Chrome and Safari can reset preservesPitch or playbackRate during media initialization.
-            // Re-enforce across all critical lifecycle events:
+            // Re-enforce across critical lifecycle events:
             const enforce = () => {
-                if (this.currentSpeechId === speechId) {
-                    this._applyVoicePitchAndRate(voiceGender);
+                if (this._isEnforcing) return;
+                this._isEnforcing = true;
+                try {
+                    if (this.currentSpeechId === speechId) {
+                        this._applyVoicePitchAndRate(voiceGender);
+                    }
+                } finally {
+                    this._isEnforcing = false;
                 }
             };
 
@@ -129,10 +173,10 @@ class TTSEngine {
                 }
             };
 
-            // Safety timeout (5s) so drill loop never hangs
+            // Safety timeout (6s) so drill loop never hangs
             timeoutId = setTimeout(() => {
                 finish(false);
-            }, 5000);
+            }, 6000);
 
             this.audioPlayer.onended = () => finish(true);
             this.audioPlayer.onerror = () => finish(false);
