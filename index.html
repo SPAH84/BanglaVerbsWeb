@@ -18,7 +18,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Noto+Serif+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
     
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="css/style.css?v=47">
+    <link rel="stylesheet" href="css/style.css?v=48-azure">
 </head>
 <body class="dark-mode">
     <!-- App Container -->
@@ -27,7 +27,7 @@
         <header class="app-header">
             <div class="header-top">
                 <h1>Bangla Verbs</h1>
-                <span id="app-version" style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.5px;opacity:0.7;align-self:center;">v47</span>
+                <span id="app-version" style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.5px;opacity:0.7;align-self:center;">v48-azure</span>
                 <div class="header-actions">
                     <button id="help-toggle" class="header-action-btn" aria-label="Quick Start Guide">
                         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -154,6 +154,42 @@
                         <svg class="chevron-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"></path></svg>
                     </button>
                     <div class="settings-content hidden">
+                        <!-- TTS Provider Selector -->
+                        <div class="setting-row">
+                            <label>TTS Provider</label>
+                            <div class="engine-selector">
+                                <button type="button" class="engine-btn" data-engine="azure">Azure Neural</button>
+                                <button type="button" class="engine-btn active" data-engine="google">Google</button>
+                            </div>
+                        </div>
+
+                        <!-- Azure Config Box -->
+                        <div id="azure-config-box" class="azure-config-panel hidden">
+                            <div class="azure-input-group">
+                                <label for="azure-key-input">Azure Speech Key</label>
+                                <div class="azure-input-wrapper">
+                                    <input type="password" id="azure-key-input" placeholder="Paste 32-char Azure Key" autocomplete="off" spellcheck="false">
+                                    <button type="button" id="azure-key-toggle" title="Show/Hide Key" class="azure-icon-btn">👁️</button>
+                                </div>
+                            </div>
+                            <div class="azure-input-group">
+                                <label for="azure-region-select">Azure Region</label>
+                                <select id="azure-region-select">
+                                    <option value="eastus">East US (eastus)</option>
+                                    <option value="southeastasia">SE Asia (southeastasia)</option>
+                                    <option value="centralindia">Central India (centralindia)</option>
+                                    <option value="westeurope">West Europe (westeurope)</option>
+                                    <option value="westus2">West US 2 (westus2)</option>
+                                    <option value="japaneast">Japan East (japaneast)</option>
+                                    <option value="australiaeast">Australia East (australiaeast)</option>
+                                </select>
+                            </div>
+                            <div class="azure-actions-row">
+                                <button type="button" id="azure-test-btn" class="azure-test-btn">Test Azure Voice</button>
+                                <span id="azure-status-badge" class="azure-badge unconfigured">Key Needed</span>
+                            </div>
+                        </div>
+
                         <!-- Audio Voice Controller -->
                         <div class="setting-row">
                             <label>Voice Gender</label>
@@ -311,6 +347,6 @@
     </div>
 
     <!-- Custom JavaScript Module -->
-    <script type="module" src="js/app.js?v=47"></script>
+    <script type="module" src="js/app.js?v=48-azure"></script>
 </body>
 </html>

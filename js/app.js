@@ -3,8 +3,8 @@
 
 import { VERBS, VERB_SETS, getVerbForms } from "./data/verbs.js?v=40";
 import { TENSES, DEFAULT_TENSE } from "./data/tenses.js?v=40";
-import { tts } from "./tts.js?v=47";
-import { audioCache } from "./cache.js?v=40";
+import { tts } from "./tts.js?v=48-azure";
+import { audioCache } from "./cache.js?v=48-azure";
 
 // --- STATE MANAGEMENT ---
 let selectedTense = DEFAULT_TENSE;
@@ -57,6 +57,13 @@ const pauseIcon = btnPlay.querySelector(".pause-icon");
 const settingsHeader = document.querySelector(".settings-header");
 const settingsContent = document.querySelector(".settings-content");
 const settingsCard = document.querySelector(".settings-card");
+const engineButtons = document.querySelectorAll(".engine-btn");
+const azureConfigBox = document.getElementById("azure-config-box");
+const azureKeyInput = document.getElementById("azure-key-input");
+const azureKeyToggle = document.getElementById("azure-key-toggle");
+const azureRegionSelect = document.getElementById("azure-region-select");
+const azureTestBtn = document.getElementById("azure-test-btn");
+const azureStatusBadge = document.getElementById("azure-status-badge");
 const speedButtons = document.querySelectorAll(".speed-btn");
 const sliderPauseRecall = document.getElementById("param-pause-recall");
 const sliderPauseRepeat = document.getElementById("param-pause-repeat");
@@ -185,6 +192,90 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     });
+
+    // 4b. TTS Engine Selector & Azure Configuration
+    const updateAzureBadge = () => {
+        if (!azureStatusBadge) return;
+        const config = tts.getAzureConfig();
+        if (config.isConfigured) {
+            azureStatusBadge.textContent = "Configured";
+            azureStatusBadge.className = "azure-badge connected";
+        } else {
+            azureStatusBadge.textContent = "Key Needed";
+            azureStatusBadge.className = "azure-badge unconfigured";
+        }
+    };
+
+    const currentEngine = tts.getEngine();
+    engineButtons.forEach(btn => {
+        const eng = btn.getAttribute("data-engine");
+        btn.classList.toggle("active", eng === currentEngine);
+        btn.addEventListener("click", () => {
+            engineButtons.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            tts.setEngine(eng);
+            if (azureConfigBox) {
+                azureConfigBox.classList.toggle("hidden", eng !== "azure");
+            }
+            tts.stop();
+        });
+    });
+
+    if (azureConfigBox) {
+        azureConfigBox.classList.toggle("hidden", currentEngine !== "azure");
+    }
+
+    if (azureKeyInput && azureRegionSelect) {
+        const config = tts.getAzureConfig();
+        azureKeyInput.value = config.key || "";
+        azureRegionSelect.value = config.region || "eastus";
+        updateAzureBadge();
+
+        const saveAzureConfig = () => {
+            tts.setAzureConfig(azureKeyInput.value, azureRegionSelect.value);
+            updateAzureBadge();
+        };
+
+        azureKeyInput.addEventListener("input", saveAzureConfig);
+        azureRegionSelect.addEventListener("change", saveAzureConfig);
+    }
+
+    if (azureKeyToggle && azureKeyInput) {
+        azureKeyToggle.addEventListener("click", () => {
+            const isPass = azureKeyInput.type === "password";
+            azureKeyInput.type = isPass ? "text" : "password";
+            azureKeyToggle.textContent = isPass ? "🔒" : "👁️";
+        });
+    }
+
+    if (azureTestBtn) {
+        azureTestBtn.addEventListener("click", async () => {
+            if (!azureKeyInput.value.trim()) {
+                if (azureStatusBadge) {
+                    azureStatusBadge.textContent = "Key Missing!";
+                    azureStatusBadge.className = "azure-badge error";
+                }
+                return;
+            }
+            azureTestBtn.disabled = true;
+            azureTestBtn.textContent = "Speaking...";
+            try {
+                await tts.speak("নমস্কার, আমি তৈরি।", "bn-BD", selectedGender);
+                if (azureStatusBadge) {
+                    azureStatusBadge.textContent = "Connected ✓";
+                    azureStatusBadge.className = "azure-badge connected";
+                }
+            } catch (err) {
+                if (azureStatusBadge) {
+                    azureStatusBadge.textContent = "Error";
+                    azureStatusBadge.className = "azure-badge error";
+                }
+            } finally {
+                azureTestBtn.disabled = false;
+                azureTestBtn.textContent = "Test Azure Voice";
+            }
+        });
+    }
 
     // 5. Voice Gender Selector
     voiceButtons.forEach(btn => {

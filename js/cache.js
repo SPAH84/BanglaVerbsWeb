@@ -39,17 +39,20 @@ class AudioCacheManager {
         });
     }
 
-    // Generate a unique cache key for a voice + text combination
-    generateKey(lang, voiceGender, text) {
+    // Generate a unique cache key for engine + voice + text combination
+    generateKey(lang, voiceGender, text, engine = "google", speed = 1.0) {
+        if (engine === "azure") {
+            return `azure_${lang}_${voiceGender}_${speed}_${encodeURIComponent(text.trim())}`;
+        }
         return `${lang}_${voiceGender}_${encodeURIComponent(text.trim())}`;
     }
 
     // Retrieve cached audio blob URL if it exists
-    async getAudio(lang, voiceGender, text) {
+    async getAudio(lang, voiceGender, text, engine = "google", speed = 1.0) {
         await this.initPromise;
         if (!this.db) return null;
 
-        const key = this.generateKey(lang, voiceGender, text);
+        const key = this.generateKey(lang, voiceGender, text, engine, speed);
 
         return new Promise((resolve) => {
             const transaction = this.db.transaction([STORE_NAME], "readonly");
@@ -70,13 +73,13 @@ class AudioCacheManager {
     }
 
     // Store audio blob into IndexedDB
-    async saveAudio(lang, voiceGender, text, blob) {
+    async saveAudio(lang, voiceGender, text, blob, engine = "google", speed = 1.0) {
         await this.initPromise;
         if (!this.db) return;
 
-        const key = this.generateKey(lang, voiceGender, text);
+        const key = this.generateKey(lang, voiceGender, text, engine, speed);
 
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             const transaction = this.db.transaction([STORE_NAME], "readwrite");
             const store = transaction.objectStore(STORE_NAME);
             const request = store.put({
@@ -113,7 +116,7 @@ class AudioCacheManager {
         await this.initPromise;
         if (!this.db) return;
 
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             const transaction = this.db.transaction([STORE_NAME], "readwrite");
             const store = transaction.objectStore(STORE_NAME);
             const request = store.clear();

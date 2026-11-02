@@ -299,9 +299,10 @@ body.light-mode .moon-icon { display: block; }
     transform: translateX(144px);
 }
 
-/* Voice & Speed Segmented Selectors */
+/* Voice, Speed & Engine Segmented Selectors */
 .voice-selector,
-.speed-selector {
+.speed-selector,
+.engine-selector {
     display: flex;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid var(--border-color);
@@ -311,12 +312,14 @@ body.light-mode .moon-icon { display: block; }
 }
 
 body.light-mode .voice-selector,
-body.light-mode .speed-selector {
+body.light-mode .speed-selector,
+body.light-mode .engine-selector {
     background: rgba(0, 0, 0, 0.03);
 }
 
 .voice-btn,
-.speed-btn {
+.speed-btn,
+.engine-btn {
     background: transparent;
     border: none;
     font-family: var(--font-sans);
@@ -331,22 +334,150 @@ body.light-mode .speed-selector {
 }
 
 .voice-btn:hover,
-.speed-btn:hover {
+.speed-btn:hover,
+.engine-btn:hover {
     color: var(--text-primary);
 }
 
 .voice-btn.active,
-.speed-btn.active {
+.speed-btn.active,
+.engine-btn.active {
     background: var(--bg-app);
     color: var(--text-primary);
     box-shadow: 0 1px 5px rgba(0, 0, 0, 0.25);
 }
 
 body.light-mode .voice-btn.active,
-body.light-mode .speed-btn.active {
+body.light-mode .speed-btn.active,
+body.light-mode .engine-btn.active {
     background: #ffffff;
     color: var(--accent);
     box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Azure Config Panel */
+.azure-config-panel {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+
+body.light-mode .azure-config-panel {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.azure-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.azure-input-group label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+}
+
+.azure-input-wrapper {
+    display: flex;
+    position: relative;
+    align-items: center;
+}
+
+.azure-input-wrapper input {
+    width: 100%;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 8px 36px 8px 10px;
+    color: var(--text-primary);
+    font-family: monospace;
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.azure-input-wrapper input:focus,
+.azure-input-group select:focus {
+    border-color: var(--accent);
+}
+
+.azure-icon-btn {
+    position: absolute;
+    right: 8px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.azure-icon-btn:hover {
+    opacity: 1;
+}
+
+.azure-input-group select {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 8px 10px;
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 12px;
+    outline: none;
+}
+
+.azure-actions-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 4px;
+}
+
+.azure-test-btn {
+    background: var(--accent);
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.azure-test-btn:hover {
+    opacity: 0.9;
+}
+
+.azure-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+.azure-badge.connected {
+    background: rgba(48, 209, 88, 0.15);
+    color: var(--success);
+}
+
+.azure-badge.unconfigured {
+    background: rgba(255, 159, 10, 0.15);
+    color: #ff9f0a;
+}
+
+.azure-badge.error {
+    background: rgba(255, 69, 58, 0.15);
+    color: var(--error);
 }
 
 /* Main Content Area Styling */
